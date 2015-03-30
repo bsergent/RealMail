@@ -1,0 +1,30 @@
+name: RealMail
+description: Send mail using books.
+version: 0.0.3
+author: Ben Sergent V
+
+main: com.challengercity.plugins.realmail.RealMail
+database: false
+#depend: [WorldEdit]
+
+commands:
+  realmail:
+    description: Base command for RealMail
+    aliases: [rm]
+
+permissions:
+  realmail.user.*:
+    description: Access to personal mailboxes
+    default: true
+    children:
+      realmail.user.setmailbox: true
+      realmail.user.sendmail: true
+      realmail.user.delmailbox: true
+      realmail.user.clear: true
+  realmail.admin.*:
+    description: Access to commands like bulk-mailing
+    default: op
+    children:
+      realmail.admin.bulkmail: true
+      realmail.admin.setmailbox.others: true
+      realmail.admin.delmailbox.others: true
