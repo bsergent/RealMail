@@ -1,6 +1,6 @@
 name: RealMail
-description: Send mail using books.
-version: 0.0.3
+description: Send mail to physical mailboxes
+version: 0.1.0
 author: Ben Sergent V
 
 main: com.challengercity.plugins.realmail.RealMail

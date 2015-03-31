@@ -21,15 +21,7 @@
 # z	Time zone	General time zone	Pacific Standard Time; PST; GMT-08:00
 # Z	Time zone	RFC 822 time zone	-0800
 # 
-# unreadmailsigntext: Unread
-# What the staus sign will say when there is new mail
-# 
-# readmailsigntext: Read
-# What the status sign will say when there is no new mail
-# 
-# signradius: 2
-# Radius from chest to look for signs with [Mailbox] on the first line
-# 
+#
 # universal_mailboxes: false
 # Not yet implemented, no personal mailboxes, only universal ones set by admins
 # 
@@ -39,9 +31,6 @@
 # login_notifications: true
 # Notify players if they have mail on login
 dateformat: MM/dd/yy hh:mma zzz
-unreadmailsigntext: Unread
-readmailsigntext: Read
-signradius: 2
 universal_mailboxes: false
 attachments: false
 login_notification: true
