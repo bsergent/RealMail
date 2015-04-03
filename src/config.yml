@@ -35,6 +35,9 @@
 # max_attachments: 4
 # How many item stacks can be added to a package
 # 
+# enable_mail_command: true
+# Show instructions on how to use and craft on /mail
+# 
 # delivery_time: 6000
 # The time of day in ticks that queued mail will be delivered
 # Set to -1 for instantaneous/express sending of mail
@@ -46,3 +49,4 @@ login_notification: true
 mailbox_rows: 2
 max_attachments: 4
 delivery_time: 6000
+enable_mail_command: true

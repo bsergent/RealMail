@@ -37,7 +37,7 @@ public class RealMail extends JavaPlugin {
 
     // TODO Add letter delivery queue for the deliver at a specific time option
     
-    private String version = "0.2.1";
+    private String version = "0.2.2";
     private org.bukkit.configuration.file.FileConfiguration mailboxesConfig = null;
     private java.io.File mailboxesFile = null;
     private org.bukkit.configuration.file.FileConfiguration packagesConfig = null;
@@ -103,7 +103,7 @@ public class RealMail extends JavaPlugin {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         
-        if (cmd.getName().equalsIgnoreCase("mail")) { // TODO Eventually add video on how to use
+        if (cmd.getName().equalsIgnoreCase("mail") && getConfig().getBoolean("enable_mail_command", true)) { // TODO Eventually add video on how to use
             if (args.length == 0 || (args.length < 2 && args[0].equals("1"))) { // Show crafting
                 sender.sendMessage(new String[] {
                     ChatColor.GOLD+""+ChatColor.BOLD+"RealMail - Crafting Recipes",
@@ -136,6 +136,7 @@ public class RealMail extends JavaPlugin {
                         ChatColor.GOLD+"Detach:",
                         ChatColor.WHITE+"  1. Pick up the package with your cursor",
                         ChatColor.WHITE+"  2. Right-click empty slots with the package",
+                        ChatColor.WHITE+"    Example: http://bit.ly/1Cijgbl",
                         ChatColor.WHITE+"Use /mail 1 for crafting"
                     });
                 }
