@@ -23,7 +23,7 @@
 # 
 #
 # universal_mailboxes: false
-# Not yet implemented, no personal mailboxes, only universal ones set by admins
+# Right-click any mailbox to open your own mailbox if true, otherwise you must click your own
 # 
 # attachments: false
 # Not yet implemented, ability to add attachments to books when mailing
@@ -34,3 +34,5 @@ dateformat: MM/dd/yy hh:mma zzz
 universal_mailboxes: false
 attachments: false
 login_notification: true
+mailbox_rows: 4
+max_attachments: 4
