@@ -25,14 +25,24 @@
 # universal_mailboxes: false
 # Right-click any mailbox to open your own mailbox if true, otherwise you must click your own
 # 
-# attachments: false
-# Not yet implemented, ability to add attachments to books when mailing
-# 
 # login_notifications: true
 # Notify players if they have mail on login
+# 
+# mailbox_rows: 2
+# how many rows a mailbox should have
+# Be careful when making smaller, any letters above the space you specify will be lost
+# 
+# max_attachments: 4
+# How many item stacks can be added to a package
+# 
+# delivery_time: 6000
+# The time of day in ticks that queued mail will be delivered
+# Set to -1 for instantaneous/express sending of mail
+# Not yet implemented
 dateformat: MM/dd/yy hh:mma zzz
 universal_mailboxes: false
 attachments: false
 login_notification: true
-mailbox_rows: 4
+mailbox_rows: 2
 max_attachments: 4
+delivery_time: 6000

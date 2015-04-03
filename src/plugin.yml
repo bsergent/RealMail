@@ -1,6 +1,6 @@
 name: RealMail
 description: Send mail to physical mailboxes without commands
-version: 0.2.0
+version: 0.2.1
 author: Ben Sergent V
 
 main: com.challengercity.plugins.realmail.RealMail
@@ -12,17 +12,21 @@ permissions:
     description: Access to personal mailboxes
     default: true
     children:
-      realmail.user.setmailbox: true
       realmail.user.sendmail: true
-      realmail.user.delmailbox: true
-      realmail.user.clear: true
+      realmail.user.attach: true
+      realmail.user.craft.*:
+        description: Access to crafting recipes
+        default: true
+        children:
+          realmail.user.craft.mailbox: true
+          realmail.user.craft.stationary: true
   realmail.admin.*:
     description: Access to commands like bulk-mailing
     default: op
     children:
       realmail.admin.bulkmail: true
-      realmail.admin.setmailbox.others: true
-      realmail.admin.delmailbox.others: true
+      realmail.admin.bypassAttachmentLimits: true
+      realmail.admin.instantDelivery: true
       
 commands:
   mail:
