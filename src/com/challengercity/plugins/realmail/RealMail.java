@@ -39,7 +39,7 @@ public class RealMail extends JavaPlugin {
 
     // TODO Add letter delivery queue for the deliver at a specific time option
     
-    private String version = "0.2.3";
+    private String version = "0.2.4";
     private org.bukkit.configuration.file.FileConfiguration mailboxesConfig = null;
     private java.io.File mailboxesFile = null;
     private org.bukkit.configuration.file.FileConfiguration packagesConfig = null;
@@ -157,6 +157,10 @@ public class RealMail extends JavaPlugin {
                     });
                 }
             } //</editor-fold>
+            
+            if (args.length >= 1 && args[0].equals("version")) {
+                sender.sendMessage(new String[] {ChatColor.GOLD+"RealMail v"+version, "Go to http://dev.bukkit.org/bukkit-plugins/realmail/ for updates."});
+            }
 
             if (!(sender instanceof Player)) {
                 sender.sendMessage("This command can only be run by a player.");
