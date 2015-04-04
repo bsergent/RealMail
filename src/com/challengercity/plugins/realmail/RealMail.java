@@ -4,6 +4,7 @@
  */
 package com.challengercity.plugins.realmail;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -15,6 +16,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -37,7 +39,7 @@ public class RealMail extends JavaPlugin {
 
     // TODO Add letter delivery queue for the deliver at a specific time option
     
-    private String version = "0.2.2";
+    private String version = "0.2.3";
     private org.bukkit.configuration.file.FileConfiguration mailboxesConfig = null;
     private java.io.File mailboxesFile = null;
     private org.bukkit.configuration.file.FileConfiguration packagesConfig = null;
@@ -47,9 +49,13 @@ public class RealMail extends JavaPlugin {
     
     /* Mailbox Commands */
     private final String mailboxTextureBlue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjZhNDllZmFhYWI1MzI1NTlmZmY5YWY3NWRhNmFjNGRkNzlkMTk5ZGNmMmZkNDk3Yzg1NDM4MDM4NTY0In19fQ==";
-    private final String mailboxTextureWhite = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTM5ZTE5NzFjYmMzYzZmZWFhYjlkMWY4NWZjOWQ5YmYwODY3NjgzZjQxMjk1NWI5NjExMTdmZTY2ZTIifX19";
     private final String mailboxIdBlue = "48614330-6c44-47be-85ec-33ed037cf48c";
+    private final String mailboxTextureWhite = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTM5ZTE5NzFjYmMzYzZmZWFhYjlkMWY4NWZjOWQ5YmYwODY3NjgzZjQxMjk1NWI5NjExMTdmZTY2ZTIifX19";
     private final String mailboxIdWhite = "480bff09-ed89-4214-a2bd-dab19fa5177d";
+    private final String mailboxTextureRed = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNGZhODljZTg1OTMyYmVjMWExYzNmMzFjYjdjMDg1YTViZmIyYWM3ZTQwNDA5NDIwOGMzYWQxMjM4NzlkYTZkYSJ9fX0=";
+    private final String mailboxIdRed = "6a71ad04-2422-41f3-a501-6ea5707aaef3";
+    private final String mailboxTextureGreen = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYzJiY2NiNTI0MDg4NWNhNjRlNDI0YTBjMTY4YTc4YzY3NmI4Yzg0N2QxODdmNmZiZjYwMjdhMWZlODZlZSJ9fX0=";
+    private final String mailboxIdGreen = "60621c0e-cb3e-471b-a237-4dec155f4889";
     
     @Override
     public void onEnable() {
@@ -103,7 +109,8 @@ public class RealMail extends JavaPlugin {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         
-        if (cmd.getName().equalsIgnoreCase("mail") && getConfig().getBoolean("enable_mail_command", true)) { // TODO Eventually add video on how to use
+        if (cmd.getName().equalsIgnoreCase("realmail")) {
+            //<editor-fold defaultstate="collapsed" desc="Intruction Commands">
             if (args.length == 0 || (args.length < 2 && args[0].equals("1"))) { // Show crafting
                 sender.sendMessage(new String[] {
                     ChatColor.GOLD+""+ChatColor.BOLD+"RealMail - Crafting Recipes",
@@ -120,7 +127,7 @@ public class RealMail extends JavaPlugin {
                     sender.sendMessage(new String[] {
                         ChatColor.GOLD+""+ChatColor.BOLD+"RealMail - Usage information",
                         ChatColor.GOLD+"Sending a letter:",
-                        ChatColor.WHITE+"  1. Craft some stationary",
+                        ChatColor.WHITE+"  1. Craft some stationary"+(getConfig().getBoolean("let_players_spawn_stationary", false)?" or use /mail new":""),
                         ChatColor.WHITE+"  2. Type your letter",
                         ChatColor.WHITE+"  3. Attach items if you wish (see /mail 3)",
                         ChatColor.WHITE+"  4. Sign the book/stationary as the recipient's username",
@@ -132,21 +139,249 @@ public class RealMail extends JavaPlugin {
                         ChatColor.GOLD+""+ChatColor.BOLD+"RealMail - Packaging",
                         ChatColor.GOLD+"Attach:",
                         ChatColor.WHITE+"  1. Pick up the item to be attached with your cursor",
-                        ChatColor.WHITE+"  2. Drop it/left-click again on the letter",
+                        ChatColor.WHITE+"  2. Drop it/left-click again on the letter ("+getConfig().getInt("max_attachments", 4)+" stacks max)",
                         ChatColor.GOLD+"Detach:",
                         ChatColor.WHITE+"  1. Pick up the package with your cursor",
                         ChatColor.WHITE+"  2. Right-click empty slots with the package",
                         ChatColor.WHITE+"    Example: http://bit.ly/1Cijgbl",
+                        ChatColor.WHITE+"Use /mail 4 for administration"
+                    });
+                } else if (args[0].equals("4")) { // Show attachments
+                    sender.sendMessage(new String[] {
+                        ChatColor.GOLD+""+ChatColor.BOLD+"RealMail - Administration",
+                        ChatColor.GOLD+"/mail send "+ChatColor.WHITE+" Send the letter in your hand to the addressed player",
+                        ChatColor.GOLD+"/mail bulksend "+ChatColor.WHITE+" Send the letter in your hand to all players with mailboxes",
+                        ChatColor.GOLD+"/mail spawn <mailbox|stationary> "+ChatColor.WHITE+" Spawn in a mailbox or some stationary",
+                        ChatColor.GOLD+"/mail open [player] "+ChatColor.WHITE+" Open your mailbox or that of another player",
                         ChatColor.WHITE+"Use /mail 1 for crafting"
                     });
                 }
+            } //</editor-fold>
+
+            if (!(sender instanceof Player)) {
+                sender.sendMessage("This command can only be run by a player.");
+            } else {
+                //<editor-fold defaultstate="collapsed" desc="NonConsole Commands">
+                Player player = (Player) sender;
+                if (args.length >= 1) {
+                    if (args[0].equals("send")) {
+                        if (player.hasPermission("realmail.admin.sendmailAnywhere")) {
+                            ItemStack itemHand = player.getItemInHand();
+                            if (itemHand.getType() == Material.WRITTEN_BOOK && itemHand.hasItemMeta() && itemHand.getItemMeta().hasDisplayName() && (itemHand.getItemMeta().getDisplayName().equals("§rLetter") || itemHand.getItemMeta().getDisplayName().equals("§rPackage"))) {
+                                BookMeta bookMeta = (BookMeta) itemHand.getItemMeta();
+                                OfflinePlayer recipient = Bukkit.getOfflinePlayer(bookMeta.getTitle());
+                                sendMail(itemHand, player, recipient, true);
+                            } else {
+                                sender.sendMessage(ChatColor.GOLD+"You may only send letters and packages");
+                            }
+                        } else {
+                            player.sendMessage(ChatColor.GOLD+"You do not have permission to send mail from anywhere.");
+                        }
+                    } else if (args[0].equals("bulksend")) {
+                        if (player.hasPermission("realmail.admin.bulkmail")) {
+                            ItemStack itemHand = player.getItemInHand();
+                            if (itemHand.getType() == Material.WRITTEN_BOOK && itemHand.hasItemMeta() && itemHand.getItemMeta().hasDisplayName() && (itemHand.getItemMeta().getDisplayName().equals("§rLetter") || itemHand.getItemMeta().getDisplayName().equals("§rPackage"))) {
+                                List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
+                                for (String p : players) {
+                                    sendMail(itemHand, player, UUID.fromString(p), false);
+                                }
+                                sender.sendMessage(ChatColor.GOLD+"Letter sent to all players on the server.");
+                            } else {
+                                sender.sendMessage(ChatColor.GOLD+"You may only send letters and packages");
+                            }
+                        } else {
+                            player.sendMessage(ChatColor.GOLD+"You do not have permission to mail players in bulk.");
+                        }
+                    } else if (args[0].equals("spawn")) {
+                        if (args.length != 2) {
+                            sender.sendMessage(ChatColor.GOLD+"Command syntax: /realmail spawn <mailbox|stationary>");
+                        } else {
+                            if (args[1].equals("mailbox")) {
+                                if (player.hasPermission("realmail.admin.spawn.mailbox")) {
+                                    giveMailbox(player);
+                                } else {
+                                    player.sendMessage(ChatColor.GOLD+"You do not have permission to spawn mailboxes.");
+                                }
+                            } else if (args[1].equals("stationary")) {
+                                if (player.hasPermission("realmail.admin.spawn.stationary")) {
+                                    giveStationary(player);
+                                } else {
+                                    player.sendMessage(ChatColor.GOLD+"You do not have permission to spawn stationary.");
+                                }
+                            } else {
+                                 sender.sendMessage(ChatColor.GOLD+"Command syntax: /realmail spawn <mailbox|stationary>");
+                            }
+                        }
+                    } else if (args[0].equals("open")) {
+                        if (args.length >= 2) {
+                            if (player.hasPermission("realmail.admin.openMailboxAnywhere.others")) {
+                                if (Bukkit.getOfflinePlayer(args[1]) != null) {
+                                    openMailbox(Bukkit.getOfflinePlayer(args[1]), player);
+                                } else {
+                                    player.sendMessage(ChatColor.GOLD+args[1]+" does not have a mailbox.");
+                                }
+                            } else {
+                                player.sendMessage(ChatColor.GOLD+"You do not have permission to view other players' mailboxes.");
+                            }
+                        } else {
+                            if (player.hasPermission("realmail.admin.openMailboxAnywhere")) {
+                                openMailbox(player, player);
+                            } else {
+                                player.sendMessage(ChatColor.GOLD+"You do not have permission to view your mailbox via command.");
+                            }
+                        }
+                    } else if (args[0].equals("new")) {
+                        if (player.hasPermission("realmail.admin.spawn.stationary") || getConfig().getBoolean("let_players_spawn_stationary", false)) {
+                             giveStationary(player);
+                        } else {
+                            player.sendMessage(ChatColor.GOLD+"You do not have permission to spawn stationary.");
+                        }
+                    }
+                }
+                //</editor-fold>
             }
-                   
+            
         }
         
         return true;
     }
     
+    public void giveMailbox(Player ply) {
+        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+ply.getName()+" skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdBlue+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureBlue+"\"}]}}}");
+    }
+    
+    public void giveStationary(Player ply) {
+        ItemStack stationary = new ItemStack(Material.BOOK_AND_QUILL, 1);
+        stationary.setItemMeta(stationaryMeta);
+        ply.getInventory().addItem(stationary);
+    }
+    
+    public boolean openMailbox(OfflinePlayer owner, Player viewer) {
+        Inventory mailInv = Bukkit.createInventory(viewer, getConfig().getInt("mailbox_rows", 4) * 9, owner.getName()+"'s Mailbox");
+        List<org.bukkit.inventory.meta.BookMeta> letters = (List<org.bukkit.inventory.meta.BookMeta>) mailboxesConfig.getList(owner.getUniqueId()+".letters", new LinkedList<org.bukkit.inventory.meta.BookMeta>());
+        for (org.bukkit.inventory.meta.BookMeta letterMeta : letters) {
+            ItemStack newBook = null;
+            if (letterMeta.getDisplayName().contains("Stationary")) {
+                newBook = new ItemStack(Material.BOOK_AND_QUILL, 1);
+            } else {
+                newBook = new ItemStack(Material.WRITTEN_BOOK, 1);
+            }
+            newBook.setItemMeta(letterMeta);
+            HashMap leftover = mailInv.addItem(newBook);
+            if (!leftover.isEmpty()) {
+                viewer.sendMessage(ChatColor.GOLD+"Not all letters could be shown. Please empty your mailbox.");
+                break;
+            }
+        }
+        viewer.openInventory(mailInv);
+        return true;
+    }
+    
+    public boolean sendMail(ItemStack mailItem, Player fromPlayer, OfflinePlayer toPlayer, boolean sendMessages) {
+        if (mailItem.getType() != Material.WRITTEN_BOOK) {
+            return false;
+        }
+        BookMeta mailMeta = (BookMeta) mailItem.getItemMeta();
+        if (mailboxesConfig.getList(toPlayer.getUniqueId()+".letters", new LinkedList<ItemStack>()).size() < (getConfig().getInt("mailbox_rows", 4)*9)) {
+            java.util.Date dateRaw = java.util.Calendar.getInstance().getTime();
+            java.text.SimpleDateFormat format = new java.text.SimpleDateFormat();
+            format.applyPattern(getConfig().getString("dateformat"));
+            String dateString = format.format(dateRaw);
+
+            List<String> oldLore = (List<String>) mailMeta.getLore();
+            List<String> lore = (List<String>) new LinkedList(Arrays.asList("§r§7To: "+mailMeta.getTitle(), "§r§7Date: "+dateString));
+            for (String oldLoreLine : oldLore) {
+                if (oldLoreLine.contains("ID")) {
+                    lore.add(oldLoreLine);
+                    break;
+                }
+            }
+            mailMeta.setLore(lore);
+
+            List<org.bukkit.inventory.meta.BookMeta> letters = (List<org.bukkit.inventory.meta.BookMeta>) mailboxesConfig.getList(toPlayer.getUniqueId()+".letters", new LinkedList<org.bukkit.inventory.meta.BookMeta>());
+            letters.add(mailMeta);
+            mailboxesConfig.set(toPlayer.getUniqueId()+".letters", letters);
+            mailboxesConfig.set(toPlayer.getUniqueId()+".unread", true);
+            try {
+                mailboxesConfig.save(mailboxesFile);
+                fromPlayer.getInventory().remove(mailItem);
+                if (sendMessages) {
+                    fromPlayer.sendMessage(ChatColor.GOLD+"Letter sent to "+toPlayer.getName()+".");
+                }
+                udpateMailboxFlags(toPlayer.getPlayer());
+                if (toPlayer.getPlayer() != null) {
+                    toPlayer.getPlayer().sendMessage(ChatColor.GOLD+"You've got mail! Check your mailbox. Use /mail to learn how to craft one.");
+                }
+            } catch (Exception ex) {
+                fromPlayer.sendMessage(ChatColor.GOLD+"Failed to send the letter.");
+                ex.printStackTrace();
+            }
+        } else {
+            if (sendMessages) {
+                fromPlayer.sendMessage(ChatColor.GOLD+"Recipient's mailbox was full. Please try again later.");
+            }
+            if (toPlayer.getPlayer() != null) {
+                toPlayer.getPlayer().sendMessage(ChatColor.GOLD+fromPlayer.getName()+" tried to send you mail, but you mailbox was full. Consider emptying it out.");
+            }
+        }
+        return true;
+    }
+    
+    public boolean sendMail(ItemStack mailItem, Player fromPlayer, UUID toUUID, boolean sendMessages) {
+        if (mailItem.getType() != Material.WRITTEN_BOOK) {
+            return false;
+        }
+        BookMeta mailMeta = (BookMeta) mailItem.getItemMeta();
+        if (mailboxesConfig.getList(toUUID+".letters", new LinkedList<ItemStack>()).size() < (getConfig().getInt("mailbox_rows", 4)*9)) {
+            java.util.Date dateRaw = java.util.Calendar.getInstance().getTime();
+            java.text.SimpleDateFormat format = new java.text.SimpleDateFormat();
+            format.applyPattern(getConfig().getString("dateformat"));
+            String dateString = format.format(dateRaw);
+
+            List<String> oldLore = (List<String>) mailMeta.getLore();
+            List<String> lore = (List<String>) new LinkedList(Arrays.asList("§r§7To: "+mailMeta.getTitle(), "§r§7Date: "+dateString));
+            for (String oldLoreLine : oldLore) {
+                if (oldLoreLine.contains("ID")) {
+                    lore.add(oldLoreLine);
+                    break;
+                }
+            }
+            mailMeta.setLore(lore);
+
+            List<org.bukkit.inventory.meta.BookMeta> letters = (List<org.bukkit.inventory.meta.BookMeta>) mailboxesConfig.getList(toUUID+".letters", new LinkedList<org.bukkit.inventory.meta.BookMeta>());
+            letters.add(mailMeta);
+            mailboxesConfig.set(toUUID+".letters", letters);
+            mailboxesConfig.set(toUUID+".unread", true);
+            try {
+                mailboxesConfig.save(mailboxesFile);
+                fromPlayer.getInventory().remove(mailItem);
+                if (sendMessages) {
+                    fromPlayer.sendMessage(ChatColor.GOLD+"Letter sent to "+Bukkit.getOfflinePlayer(toUUID).getName()+".");
+                }
+                udpateMailboxFlags(Bukkit.getOfflinePlayer(toUUID));
+                if (Bukkit.getPlayer(toUUID) != null) {
+                    Bukkit.getPlayer(toUUID).sendMessage(ChatColor.GOLD+"You've got mail! Check your mailbox. Use /mail to learn how to craft one.");
+                }
+            } catch (Exception ex) {
+                fromPlayer.sendMessage(ChatColor.GOLD+"Failed to send the letter.");
+                ex.printStackTrace();
+            }
+        } else {
+            if (sendMessages) {
+                fromPlayer.sendMessage(ChatColor.GOLD+"Recipient's mailbox was full. Please try again later.");
+            }
+            if (Bukkit.getPlayer(toUUID) != null) {
+                Bukkit.getPlayer(toUUID).sendMessage(ChatColor.GOLD+fromPlayer.getName()+" tried to send you mail, but you mailbox was full. Consider emptying it out.");
+            }
+        }
+        return true;
+    }
+    
+    public boolean udpateMailboxFlags(OfflinePlayer owner) {
+        return true;
+    }
+    
+    //<editor-fold defaultstate="collapsed" desc="Old Methods">
     private boolean sendBook(org.bukkit.inventory.ItemStack bookStack, Player fromPlayer, String toString, boolean bulk) {
         /*Player target  = org.bukkit.Bukkit.getServer().getPlayer(toString);
         try {
@@ -252,23 +487,21 @@ public class RealMail extends JavaPlugin {
         }*/
         return false;
     }
+    //</editor-fold>
     
-    public boolean setMailboxFlag(boolean up, org.bukkit.Location boxLocation) {
-        return true;
-    }
-    
+    //<editor-fold defaultstate="collapsed" desc="Listeners">
     public final class MailListener implements org.bukkit.event.Listener {
         
         @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.NORMAL)
-        public void onUseItemEvent(org.bukkit.event.player.PlayerInteractEvent e) { // Detect mailbox texture cycling
+        public void onUseItemEvent(org.bukkit.event.player.PlayerInteractEvent e) {
             if (e.getItem() != null) {
                 ItemStack is = e.getItem();
                 ItemStack toBeRemoved = is.clone();
                 toBeRemoved.setAmount(1);
                 /* Exchange Coupon */
-                if (is.getType() == Material.PAPER && is.getItemMeta().equals(mailboxRecipeMeta)) {
+                if (is.getType() == Material.PAPER && is.hasItemMeta() && is.getItemMeta().hasDisplayName() && is.getItemMeta().getDisplayName().contains("Mailbox Recipe")) {
                     e.getPlayer().getInventory().removeItem(toBeRemoved);
-                    getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdBlue+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureBlue+"\"}]}}}");
+                    giveMailbox(e.getPlayer());
                     e.getPlayer().sendMessage(ChatColor.GOLD+"You exchanged your recipe for a mailbox.");
                 }
                 /* Cycle texture */
@@ -277,6 +510,10 @@ public class RealMail extends JavaPlugin {
                     if (is.getItemMeta().getLore().get(0).contains("Blue")) {
                         getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7White\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdWhite+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureWhite+"\"}]}}}");
                     } else if (is.getItemMeta().getLore().get(0).contains("White")) {
+                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Red\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdRed+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureRed+"\"}]}}}");
+                    } else if (is.getItemMeta().getLore().get(0).contains("Red")) {
+                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Green\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdGreen+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureGreen+"\"}]}}}");
+                    } else if (is.getItemMeta().getLore().get(0).contains("Green")) {
                         getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdBlue+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureBlue+"\"}]}}}");
                     }
                     e.getPlayer().sendMessage(ChatColor.GOLD+"You changed your mailbox's texture.");
@@ -286,62 +523,22 @@ public class RealMail extends JavaPlugin {
                         if (e.getClickedBlock() != null && e.getClickedBlock().getType().equals(Material.SKULL)) {
 
                             List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
+                            boolean foundMailbox = false;
+                            players:
                             for (String p : players) {
                                 List<Location> locations = (List<Location>) mailboxesConfig.getList(e.getPlayer().getUniqueId()+".mailboxes", new LinkedList<Location>());
                                 for (Location loc : locations) {
                                     if (e.getClickedBlock().getLocation().equals(loc)) {
                                         org.bukkit.inventory.meta.BookMeta newLetter = (org.bukkit.inventory.meta.BookMeta) is.getItemMeta();
-                                        org.bukkit.OfflinePlayer recipient = Bukkit.getOfflinePlayer(newLetter.getTitle());
-                                        if (recipient != null) {
-                                            if (e.getPlayer().hasPermission("realmail.user.sendmail")) {
-                                                if (mailboxesConfig.getList(recipient.getUniqueId()+".letters", new LinkedList<ItemStack>()).size() < (getConfig().getInt("mailbox_rows", 4)*9)) {
-                                                    java.util.Date dateRaw = java.util.Calendar.getInstance().getTime();
-                                                    java.text.SimpleDateFormat format = new java.text.SimpleDateFormat();
-                                                    format.applyPattern(getConfig().getString("dateformat"));
-                                                    String dateString = format.format(dateRaw);
-
-                                                    List<String> oldLore = (List<String>) newLetter.getLore();
-                                                    List<String> lore = (List<String>) new LinkedList(Arrays.asList("§r§7To: "+newLetter.getTitle(), "§r§7Date: "+dateString));
-                                                    for (String oldLoreLine : oldLore) {
-                                                        if (oldLoreLine.contains("ID")) {
-                                                            lore.add(oldLoreLine);
-                                                            break;
-                                                        }
-                                                    }
-                                                    newLetter.setLore(lore);
-
-                                                    List<org.bukkit.inventory.meta.BookMeta> letters = (List<org.bukkit.inventory.meta.BookMeta>) mailboxesConfig.getList(recipient.getUniqueId()+".letters", new LinkedList<org.bukkit.inventory.meta.BookMeta>());
-                                                    letters.add(newLetter);
-                                                    mailboxesConfig.set(recipient.getUniqueId()+".letters", letters);
-                                                    mailboxesConfig.set(recipient.getUniqueId()+".unread", true);
-                                                    try {
-                                                        mailboxesConfig.save(mailboxesFile);
-                                                        e.getPlayer().getInventory().remove(is);
-                                                        e.getPlayer().sendMessage(ChatColor.GOLD+"Letter sent to "+recipient.getName()+".");
-                                                        setMailboxFlag(true, loc);
-                                                        if (recipient.getPlayer() != null) {
-                                                            recipient.getPlayer().sendMessage(ChatColor.GOLD+"You've got mail! Check your mailbox.");
-                                                        }
-                                                    } catch (Exception ex) {
-                                                        e.getPlayer().sendMessage(ChatColor.GOLD+"Failed to send the letter.");
-                                                        ex.printStackTrace();
-                                                    }
-                                                } else {
-                                                    e.getPlayer().sendMessage(ChatColor.GOLD+"Recipient's mailbox was full. Please try again later.");
-                                                    if (recipient.getPlayer() != null) {
-                                                        recipient.getPlayer().sendMessage(ChatColor.GOLD+e.getPlayer().getName()+" tried to send you mail, but you mailbox was full. Consider emptying it out.");
-                                                    }
-                                                }
-                                            } else {
-                                                e.getPlayer().sendMessage(ChatColor.GOLD+"You do not have permission to send mail.");
-                                            }
+                                        OfflinePlayer recipient = Bukkit.getOfflinePlayer(newLetter.getTitle());
+                                        if (e.getPlayer().hasPermission("realmail.user.sendmail")) {
+                                            ItemStack newLetterItem = new ItemStack(Material.WRITTEN_BOOK);
+                                            newLetterItem.setItemMeta(newLetter);
+                                            RealMail.this.sendMail(newLetterItem, e.getPlayer(), recipient, true);
                                         } else {
-                                            e.getPlayer().sendMessage(ChatColor.GOLD+"Recipient did not exist. Made letter editable again.");
-                                            newLetter.setDisplayName("§rStationary");
-                                            e.getItem().setType(Material.BOOK_AND_QUILL);
-                                            e.getItem().setItemMeta(newLetter);
+                                            e.getPlayer().sendMessage(ChatColor.GOLD+"You do not have permission to send mail.");
                                         }
-                                        
+                                        break players;
                                     }
                                 }
                             }
@@ -352,33 +549,23 @@ public class RealMail extends JavaPlugin {
             /* Open Mailbox */
             if (e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getClickedBlock() != null && e.getClickedBlock().getType().equals(Material.SKULL) && e.getPlayer().getItemInHand().getType() != Material.WRITTEN_BOOK) {
                 List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
+                boolean ownedMailbox = false;
+                boolean isMailbox = false;
                 for (String p : players) {
                     if (getConfig().getBoolean("universal_mailboxes") || p.equals(e.getPlayer().getUniqueId().toString())) {
+                        ownedMailbox = true;
                         List<Location> locations = (List<Location>) mailboxesConfig.getList(p+".mailboxes", new LinkedList<Location>());
                         for (Location loc : locations) {
                             if (e.getClickedBlock().getLocation().equals(loc)) {
-                                Inventory mailInv = Bukkit.createInventory(e.getPlayer(), getConfig().getInt("mailbox_rows", 4) * 9, "Mailbox");
-                                List<org.bukkit.inventory.meta.BookMeta> letters = (List<org.bukkit.inventory.meta.BookMeta>) mailboxesConfig.getList(e.getPlayer().getUniqueId()+".letters", new LinkedList<org.bukkit.inventory.meta.BookMeta>());
-                                for (org.bukkit.inventory.meta.BookMeta letterMeta : letters) {
-                                    ItemStack newBook = null;
-                                    if (letterMeta.getDisplayName().contains("Stationary")) {
-                                        newBook = new ItemStack(Material.BOOK_AND_QUILL, 1);
-                                    } else {
-                                        newBook = new ItemStack(Material.WRITTEN_BOOK, 1);
-                                    }
-                                    newBook.setItemMeta(letterMeta);
-                                    HashMap leftover = mailInv.addItem(newBook);
-                                    if (!leftover.isEmpty()) {
-                                        e.getPlayer().sendMessage(ChatColor.GOLD+"Not all letters could be shown. Please empty your mailbox.");
-                                        break;
-                                    }
-                                }
-                                e.getPlayer().openInventory(mailInv);
+                                isMailbox = true;
                             }
                         }
-                    } else {
-                        e.getPlayer().sendMessage(ChatColor.GOLD+"That's not your mailbox. Use /mail to find out how to craft your own.");
                     }
+                }
+                if (isMailbox && (!ownedMailbox)) {
+                    e.getPlayer().sendMessage(ChatColor.GOLD+"That's not your mailbox. Use /mail to find out how to craft your own."); // This runs after every mailbox
+                } else if (isMailbox && ownedMailbox) {
+                    openMailbox(e.getPlayer(), e.getPlayer());
                 }
             }
         }
@@ -393,10 +580,10 @@ public class RealMail extends JavaPlugin {
             }
         }
         
-        /* Only Letters in Mailbox */
+        /* Only Letters in Mailbox & Attachments */
         @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.NORMAL)
         public void onInventoryClick(org.bukkit.event.inventory.InventoryClickEvent e) {
-            if (e.getInventory().getName().equals("Mailbox")) {
+            if (e.getInventory().getName().contains("Mailbox")) {
                 ItemStack cursor = e.getCursor();
                 ItemStack current = e.getCurrentItem();
                 
@@ -468,7 +655,7 @@ public class RealMail extends JavaPlugin {
                 ItemStack cursor = e.getCursor();
                 
                 if ((current == null || current.getType() == Material.BOOK_AND_QUILL) && cursor != null && cursor.getType() != Material.AIR) {
-                    if (current.hasItemMeta()) {
+                    if (current != null && current.hasItemMeta()) {
                         if (current.getItemMeta().hasDisplayName()) {
                             if (current.getItemMeta().getDisplayName().contains("Stationary") || current.getItemMeta().getDisplayName().contains("Package")) {
                                 if (e.getWhoClicked().hasPermission("realmail.user.attach")) {
@@ -484,10 +671,11 @@ public class RealMail extends JavaPlugin {
                                             }
                                         }
                                     }
-                                    if (attachments.size() < getConfig().getInt("max_attachments", 4)) {
+                                    if (attachments.size() < getConfig().getInt("max_attachments", 4) || e.getWhoClicked().hasPermission("realmail.admin.bypassAttachmentLimits")) {
                                         if (code.equals("")) {
                                             code = UUID.randomUUID().toString();
                                             List<String> lore = im.getLore();
+                                            lore.add("§r§7Right-click empty slot with package to detach");
                                             lore.add("§r§7ID: "+code);
                                             im.setLore(lore);
                                         }
@@ -569,20 +757,18 @@ public class RealMail extends JavaPlugin {
         /* Save Mailbox on Close */
         @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.NORMAL)
         public void onInventoryClose(org.bukkit.event.inventory.InventoryCloseEvent e) {
-            if (e.getInventory().getName().equals("Mailbox")) {
+            if (e.getInventory().getName().contains("Mailbox")) {
                 List<BookMeta> letters = new LinkedList<BookMeta>();
                 for (ItemStack is : e.getInventory().getContents()) { // TODO Should do anything about extra letters?
                     if (is != null && is.hasItemMeta()) {
-                        if (!(is.getItemMeta() instanceof org.bukkit.inventory.meta.BookMeta)) {
-                            // TODO Throw items that can't be stored on the ground
-                        } else {
-                            letters.add((org.bukkit.inventory.meta.BookMeta) is.getItemMeta());
-                        }
+                        letters.add((org.bukkit.inventory.meta.BookMeta) is.getItemMeta());
                     }
                 }
-                mailboxesConfig.set(e.getPlayer().getUniqueId()+".letters", letters);
-                mailboxesConfig.set(e.getPlayer().getUniqueId()+".unread", false);
-                //setMailboxFlag(false, loc); TODO Update mailbox flag on read
+                String ownerName = e.getInventory().getName();
+                ownerName = ownerName.replace("'s Mailbox", "");
+                mailboxesConfig.set(Bukkit.getOfflinePlayer(ownerName).getUniqueId()+".letters", letters);
+                mailboxesConfig.set(Bukkit.getOfflinePlayer(ownerName).getUniqueId()+".unread", false);
+                RealMail.this.udpateMailboxFlags(Bukkit.getOfflinePlayer(ownerName));
                 try {
                     mailboxesConfig.save(mailboxesFile);
                 } catch (Exception ex) {
@@ -675,17 +861,29 @@ public class RealMail extends JavaPlugin {
     public final class LoginListener implements org.bukkit.event.Listener {
         @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
         public void onPlayerJoin(org.bukkit.event.player.PlayerJoinEvent e) {
-            if (mailboxesConfig.contains(e.getPlayer().getUniqueId().toString()) && getConfig().getBoolean("login_notification")) {
-                if (mailboxesConfig.getBoolean(e.getPlayer().getUniqueId()+".unread", false)) {
-                    try {
-                        Bukkit.getScheduler().runTaskLater(RealMail.this, new LoginRunnable(e), 20*10);
-                    } catch (Exception ex) {
-                        e.getPlayer().sendMessage(ChatColor.GOLD+"You've got mail! Check your mailbox.");
+            if (mailboxesConfig.contains(e.getPlayer().getUniqueId().toString())) {
+                if (getConfig().getBoolean("login_notification")) {
+                    if (mailboxesConfig.getBoolean(e.getPlayer().getUniqueId()+".unread", false)) {
+                        try {
+                            Bukkit.getScheduler().runTaskLater(RealMail.this, new LoginRunnable(e), 20*10);
+                        } catch (IllegalArgumentException ex) {
+                            e.getPlayer().sendMessage(ChatColor.GOLD+"You've got mail! Check your mailbox.");
+                        }
                     }
+                }
+            } else {
+                List<String> knownPlayers = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
+                knownPlayers.add(e.getPlayer().getUniqueId().toString());
+                mailboxesConfig.set("players", knownPlayers);
+                try {
+                    mailboxesConfig.save(mailboxesFile);
+                } catch (IOException ex) {
+                    getLogger().log(Level.WARNING, "Failed to add {0} to the mail list.", e.getPlayer().getName());
                 }
             }
         }
     }
+    //</editor-fold>
     
     public final class LoginRunnable implements Runnable {
         

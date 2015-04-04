@@ -38,15 +38,19 @@
 # enable_mail_command: true
 # Show instructions on how to use and craft on /mail
 # 
+# let_players_spawn_stationary: false
+# Will let players spawn in stationary using "/mail new" instead of crafting
+# This stationary will not be tradable with villagers
+# 
 # delivery_time: 6000
 # The time of day in ticks that queued mail will be delivered
 # Set to -1 for instantaneous/express sending of mail
 # Not yet implemented
 dateformat: MM/dd/yy hh:mma zzz
 universal_mailboxes: false
-attachments: false
+enable_attachments: true
 login_notification: true
 mailbox_rows: 2
 max_attachments: 4
 delivery_time: 6000
-enable_mail_command: true
+let_players_spawn_stationary: false

@@ -1,6 +1,6 @@
 name: RealMail
 description: Send mail to physical mailboxes without commands
-version: 0.2.2
+version: 0.2.3
 author: Ben Sergent V
 
 main: com.challengercity.plugins.realmail.RealMail
@@ -25,9 +25,19 @@ permissions:
     default: op
     children:
       realmail.admin.bulkmail: true
+      realmail.admin.sendmailAnywhere: true
+      realmail.admin.openMailboxAnywhere: true
+      realmail.admin.openMailboxAnywhere.others: true
       realmail.admin.bypassAttachmentLimits: true
       realmail.admin.instantDelivery: true
+      realmail.admin.spawn.*:
+        description: Spawn items in
+        default: op
+        children:
+          realmail.admin.spawn.mailbox: true
+          realmail.admin.spawn.stationary: true
       
 commands:
-  mail:
+  realmail:
     description: Shows usage information for RealMail
+    aliases: [mail, mailbox, rm]
