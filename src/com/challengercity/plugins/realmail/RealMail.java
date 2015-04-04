@@ -39,7 +39,7 @@ public class RealMail extends JavaPlugin {
 
     // TODO Add letter delivery queue for the deliver at a specific time option
     
-    private String version = "0.2.5";
+    private String version = "0.2.6";
     private org.bukkit.configuration.file.FileConfiguration mailboxesConfig = null;
     private java.io.File mailboxesFile = null;
     private org.bukkit.configuration.file.FileConfiguration packagesConfig = null;
@@ -94,6 +94,13 @@ public class RealMail extends JavaPlugin {
             packagesFile = new java.io.File(getDataFolder(), "packages.yml");
         }
         packagesConfig = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(packagesFile);
+        
+        try {
+        org.mcstats.MetricsLite metrics = new org.mcstats.MetricsLite(this);
+            metrics.start();
+        } catch (IOException e) {
+            // Failed to submit the stats :-(
+        }
         
         getServer().getPluginManager().registerEvents(new MailListener(), this);
         getServer().getPluginManager().registerEvents(new LoginListener(), this);
