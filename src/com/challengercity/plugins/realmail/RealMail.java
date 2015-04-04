@@ -39,7 +39,7 @@ public class RealMail extends JavaPlugin {
 
     // TODO Add letter delivery queue for the deliver at a specific time option
     
-    private String version = "0.2.4";
+    private String version = "0.2.5";
     private org.bukkit.configuration.file.FileConfiguration mailboxesConfig = null;
     private java.io.File mailboxesFile = null;
     private org.bukkit.configuration.file.FileConfiguration packagesConfig = null;
@@ -109,7 +109,7 @@ public class RealMail extends JavaPlugin {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         
-        if (cmd.getName().equalsIgnoreCase("realmail")) {
+        if (cmd.getName().equalsIgnoreCase("realmail")) { // TODO Make the commands more organized when dealing w/ console vs player
             //<editor-fold defaultstate="collapsed" desc="Intruction Commands">
             if (args.length == 0 || (args.length < 2 && args[0].equals("1"))) { // Show crafting
                 sender.sendMessage(new String[] {
@@ -160,89 +160,89 @@ public class RealMail extends JavaPlugin {
             
             if (args.length >= 1 && args[0].equals("version")) {
                 sender.sendMessage(new String[] {ChatColor.GOLD+"RealMail v"+version, "Go to http://dev.bukkit.org/bukkit-plugins/realmail/ for updates."});
-            }
-
-            if (!(sender instanceof Player)) {
-                sender.sendMessage("This command can only be run by a player.");
             } else {
-                //<editor-fold defaultstate="collapsed" desc="NonConsole Commands">
-                Player player = (Player) sender;
-                if (args.length >= 1) {
-                    if (args[0].equals("send")) {
-                        if (player.hasPermission("realmail.admin.sendmailAnywhere")) {
-                            ItemStack itemHand = player.getItemInHand();
-                            if (itemHand.getType() == Material.WRITTEN_BOOK && itemHand.hasItemMeta() && itemHand.getItemMeta().hasDisplayName() && (itemHand.getItemMeta().getDisplayName().equals("§rLetter") || itemHand.getItemMeta().getDisplayName().equals("§rPackage"))) {
-                                BookMeta bookMeta = (BookMeta) itemHand.getItemMeta();
-                                OfflinePlayer recipient = Bukkit.getOfflinePlayer(bookMeta.getTitle());
-                                sendMail(itemHand, player, recipient, true);
-                            } else {
-                                sender.sendMessage(ChatColor.GOLD+"You may only send letters and packages");
-                            }
-                        } else {
-                            player.sendMessage(ChatColor.GOLD+"You do not have permission to send mail from anywhere.");
-                        }
-                    } else if (args[0].equals("bulksend")) {
-                        if (player.hasPermission("realmail.admin.bulkmail")) {
-                            ItemStack itemHand = player.getItemInHand();
-                            if (itemHand.getType() == Material.WRITTEN_BOOK && itemHand.hasItemMeta() && itemHand.getItemMeta().hasDisplayName() && (itemHand.getItemMeta().getDisplayName().equals("§rLetter") || itemHand.getItemMeta().getDisplayName().equals("§rPackage"))) {
-                                List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
-                                for (String p : players) {
-                                    sendMail(itemHand, player, UUID.fromString(p), false);
-                                }
-                                sender.sendMessage(ChatColor.GOLD+"Letter sent to all players on the server.");
-                            } else {
-                                sender.sendMessage(ChatColor.GOLD+"You may only send letters and packages");
-                            }
-                        } else {
-                            player.sendMessage(ChatColor.GOLD+"You do not have permission to mail players in bulk.");
-                        }
-                    } else if (args[0].equals("spawn")) {
-                        if (args.length != 2) {
-                            sender.sendMessage(ChatColor.GOLD+"Command syntax: /realmail spawn <mailbox|stationary>");
-                        } else {
-                            if (args[1].equals("mailbox")) {
-                                if (player.hasPermission("realmail.admin.spawn.mailbox")) {
-                                    giveMailbox(player);
+                if (!(sender instanceof Player)) {
+                    sender.sendMessage("This command can only be run by a player.");
+                } else {
+                    //<editor-fold defaultstate="collapsed" desc="NonConsole Commands">
+                    Player player = (Player) sender;
+                    if (args.length >= 1) {
+                        if (args[0].equals("send")) {
+                            if (player.hasPermission("realmail.admin.sendmailAnywhere")) {
+                                ItemStack itemHand = player.getItemInHand();
+                                if (itemHand.getType() == Material.WRITTEN_BOOK && itemHand.hasItemMeta() && itemHand.getItemMeta().hasDisplayName() && (itemHand.getItemMeta().getDisplayName().equals("§rLetter") || itemHand.getItemMeta().getDisplayName().equals("§rPackage"))) {
+                                    BookMeta bookMeta = (BookMeta) itemHand.getItemMeta();
+                                    OfflinePlayer recipient = Bukkit.getOfflinePlayer(bookMeta.getTitle());
+                                    sendMail(itemHand, player, recipient, true);
                                 } else {
-                                    player.sendMessage(ChatColor.GOLD+"You do not have permission to spawn mailboxes.");
+                                    sender.sendMessage(ChatColor.GOLD+"You may only send letters and packages");
                                 }
-                            } else if (args[1].equals("stationary")) {
-                                if (player.hasPermission("realmail.admin.spawn.stationary")) {
-                                    giveStationary(player);
+                            } else {
+                                player.sendMessage(ChatColor.GOLD+"You do not have permission to send mail from anywhere.");
+                            }
+                        } else if (args[0].equals("bulksend")) {
+                            if (player.hasPermission("realmail.admin.bulkmail")) {
+                                ItemStack itemHand = player.getItemInHand();
+                                if (itemHand.getType() == Material.WRITTEN_BOOK && itemHand.hasItemMeta() && itemHand.getItemMeta().hasDisplayName() && (itemHand.getItemMeta().getDisplayName().equals("§rLetter") || itemHand.getItemMeta().getDisplayName().equals("§rPackage"))) {
+                                    List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
+                                    for (String p : players) {
+                                        sendMail(itemHand, player, UUID.fromString(p), false);
+                                    }
+                                    sender.sendMessage(ChatColor.GOLD+"Letter sent to all players on the server.");
                                 } else {
-                                    player.sendMessage(ChatColor.GOLD+"You do not have permission to spawn stationary.");
+                                    sender.sendMessage(ChatColor.GOLD+"You may only send letters and packages");
                                 }
                             } else {
-                                 sender.sendMessage(ChatColor.GOLD+"Command syntax: /realmail spawn <mailbox|stationary>");
+                                player.sendMessage(ChatColor.GOLD+"You do not have permission to mail players in bulk.");
                             }
-                        }
-                    } else if (args[0].equals("open")) {
-                        if (args.length >= 2) {
-                            if (player.hasPermission("realmail.admin.openMailboxAnywhere.others")) {
-                                if (Bukkit.getOfflinePlayer(args[1]) != null) {
-                                    openMailbox(Bukkit.getOfflinePlayer(args[1]), player);
+                        } else if (args[0].equals("spawn")) {
+                            if (args.length != 2) {
+                                sender.sendMessage(ChatColor.GOLD+"Command syntax: /realmail spawn <mailbox|stationary>");
+                            } else {
+                                if (args[1].equals("mailbox")) {
+                                    if (player.hasPermission("realmail.admin.spawn.mailbox")) {
+                                        giveMailbox(player);
+                                    } else {
+                                        player.sendMessage(ChatColor.GOLD+"You do not have permission to spawn mailboxes.");
+                                    }
+                                } else if (args[1].equals("stationary")) {
+                                    if (player.hasPermission("realmail.admin.spawn.stationary")) {
+                                        giveStationary(player);
+                                    } else {
+                                        player.sendMessage(ChatColor.GOLD+"You do not have permission to spawn stationary.");
+                                    }
                                 } else {
-                                    player.sendMessage(ChatColor.GOLD+args[1]+" does not have a mailbox.");
+                                     sender.sendMessage(ChatColor.GOLD+"Command syntax: /realmail spawn <mailbox|stationary>");
+                                }
+                            }
+                        } else if (args[0].equals("open")) {
+                            if (args.length >= 2) {
+                                if (player.hasPermission("realmail.admin.openMailboxAnywhere.others")) {
+                                    if (Bukkit.getOfflinePlayer(args[1]) != null) {
+                                        openMailbox(Bukkit.getOfflinePlayer(args[1]), player);
+                                    } else {
+                                        player.sendMessage(ChatColor.GOLD+args[1]+" does not have a mailbox.");
+                                    }
+                                } else {
+                                    player.sendMessage(ChatColor.GOLD+"You do not have permission to view other players' mailboxes.");
                                 }
                             } else {
-                                player.sendMessage(ChatColor.GOLD+"You do not have permission to view other players' mailboxes.");
+                                if (player.hasPermission("realmail.admin.openMailboxAnywhere")) {
+                                    openMailbox(player, player);
+                                } else {
+                                    player.sendMessage(ChatColor.GOLD+"You do not have permission to view your mailbox via command.");
+                                }
                             }
-                        } else {
-                            if (player.hasPermission("realmail.admin.openMailboxAnywhere")) {
-                                openMailbox(player, player);
+                        } else if (args[0].equals("new")) {
+                            if (player.hasPermission("realmail.admin.spawn.stationary") || getConfig().getBoolean("let_players_spawn_stationary", false)) {
+                                 giveStationary(player);
                             } else {
-                                player.sendMessage(ChatColor.GOLD+"You do not have permission to view your mailbox via command.");
+                                player.sendMessage(ChatColor.GOLD+"You do not have permission to spawn stationary.");
                             }
-                        }
-                    } else if (args[0].equals("new")) {
-                        if (player.hasPermission("realmail.admin.spawn.stationary") || getConfig().getBoolean("let_players_spawn_stationary", false)) {
-                             giveStationary(player);
-                        } else {
-                            player.sendMessage(ChatColor.GOLD+"You do not have permission to spawn stationary.");
                         }
                     }
-                }
                 //</editor-fold>
+                }
             }
             
         }
@@ -251,7 +251,7 @@ public class RealMail extends JavaPlugin {
     }
     
     public void giveMailbox(Player ply) {
-        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+ply.getName()+" skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdBlue+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureBlue+"\"}]}}}");
+        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+ply.getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdBlue+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureBlue+"\"}]}}}");
     }
     
     public void giveStationary(Player ply) {
@@ -512,13 +512,13 @@ public class RealMail extends JavaPlugin {
                 else if (is.getType() == Material.SKULL_ITEM && (e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK) && is.getItemMeta().hasLore() && is.getItemMeta().getLore().get(1).contains("Punch to change texture")) {
                     e.getPlayer().getInventory().removeItem(toBeRemoved);
                     if (is.getItemMeta().getLore().get(0).contains("Blue")) {
-                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7White\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdWhite+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureWhite+"\"}]}}}");
+                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7White\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdWhite+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureWhite+"\"}]}}}");
                     } else if (is.getItemMeta().getLore().get(0).contains("White")) {
-                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Red\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdRed+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureRed+"\"}]}}}");
+                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Red\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdRed+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureRed+"\"}]}}}");
                     } else if (is.getItemMeta().getLore().get(0).contains("Red")) {
-                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Green\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdGreen+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureGreen+"\"}]}}}");
+                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Green\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdGreen+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureGreen+"\"}]}}}");
                     } else if (is.getItemMeta().getLore().get(0).contains("Green")) {
-                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdBlue+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureBlue+"\"}]}}}");
+                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdBlue+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureBlue+"\"}]}}}");
                     }
                     e.getPlayer().sendMessage(ChatColor.GOLD+"You changed your mailbox's texture.");
                 }
