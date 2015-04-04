@@ -54,3 +54,4 @@ mailbox_rows: 2
 max_attachments: 4
 delivery_time: 6000
 let_players_spawn_stationary: false
+lock_mailboxes: true
