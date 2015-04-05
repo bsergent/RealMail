@@ -40,7 +40,7 @@ public class RealMail extends JavaPlugin {
 
     // TODO Add letter delivery queue for the deliver at a specific time option
     
-    private String version = "0.2.7";
+    private String version = "0.2.8";
     private org.bukkit.configuration.file.FileConfiguration mailboxesConfig = null;
     private java.io.File mailboxesFile = null;
     private org.bukkit.configuration.file.FileConfiguration packagesConfig = null;
@@ -690,32 +690,24 @@ public class RealMail extends JavaPlugin {
                 ItemStack cursor = e.getCursor();
                 ItemStack current = e.getCurrentItem();
                 
-                boolean allowCursor = false;
-                boolean allowCurrent = false;
+                boolean disallowCursor = false;
+                boolean disallowCurrent = false;
                 
-                if (cursor == null || cursor.getType() == Material.AIR) {
-                    allowCursor = true;
-                } else {
-                    if (cursor.hasItemMeta()) {
-                        if (cursor.getItemMeta().hasDisplayName()) {
-                            if (cursor.getItemMeta().getDisplayName().contains("Stationary") || cursor.getItemMeta().getDisplayName().contains("Letter") || cursor.getItemMeta().getDisplayName().contains("Package")) {
-                                allowCursor = true;
-                            }
+                if (cursor.hasItemMeta()) {
+                    if (cursor.getItemMeta().hasDisplayName()) {
+                        if (cursor.getItemMeta().getDisplayName().contains("Stationary") || cursor.getItemMeta().getDisplayName().contains("Letter") || cursor.getItemMeta().getDisplayName().contains("Package")) {
+                            disallowCursor = true;
                         }
                     }
                 }
-                if (current == null || current.getType() == Material.AIR) {
-                    allowCurrent = true;
-                } else {
-                    if (current.hasItemMeta()) {
-                        if (current.getItemMeta().hasDisplayName()) {
-                            if (current.getItemMeta().getDisplayName().contains("Stationary") || current.getItemMeta().getDisplayName().contains("Letter") || current.getItemMeta().getDisplayName().contains("Package")) {
-                                allowCurrent = true;
-                            }
+                if (current.hasItemMeta()) {
+                    if (current.getItemMeta().hasDisplayName()) {
+                        if (current.getItemMeta().getDisplayName().contains("Stationary") || current.getItemMeta().getDisplayName().contains("Letter") || current.getItemMeta().getDisplayName().contains("Package")) {
+                            disallowCurrent = true;
                         }
                     }
                 }
-                if (allowCursor || allowCurrent) {
+                if (disallowCursor || disallowCurrent) {
                     e.setCancelled(true);
                 }
             }
