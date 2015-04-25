@@ -4,7 +4,10 @@
  */
 package com.challengercity.plugins.realmail;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,7 +43,7 @@ public class RealMail extends JavaPlugin {
 
     // TODO Add letter delivery queue for the deliver at a specific time option
     
-    private String version = "0.2.8";
+    private final String version = "0.2.9";
     private org.bukkit.configuration.file.FileConfiguration mailboxesConfig = null;
     private java.io.File mailboxesFile = null;
     private org.bukkit.configuration.file.FileConfiguration packagesConfig = null;
@@ -49,6 +52,7 @@ public class RealMail extends JavaPlugin {
     private java.io.File languageFile = null;
     private ItemMeta mailboxRecipeMeta = null;
     private org.bukkit.inventory.meta.BookMeta stationaryMeta = null;
+    private String prefix = ChatColor.WHITE+"["+ChatColor.GOLD+"Mail"+ChatColor.WHITE+"]";
     
     /* Mailbox Commands */
     private final String mailboxTextureBlue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjZhNDllZmFhYWI1MzI1NTlmZmY5YWY3NWRhNmFjNGRkNzlkMTk5ZGNmMmZkNDk3Yzg1NDM4MDM4NTY0In19fQ==";
@@ -88,6 +92,11 @@ public class RealMail extends JavaPlugin {
         stationaryRecipe.addIngredient(Material.FEATHER);
         this.getServer().addRecipe(stationaryRecipe);
         
+        if (getConfig().getString("prefix") != null) {
+            prefix = getConfig().getString("prefix").replaceAll("&", "§");
+        }
+        prefix = prefix+" ";
+        
         if (mailboxesFile == null) {
             mailboxesFile = new java.io.File(getDataFolder(), "mailboxes.yml");
         }
@@ -100,11 +109,29 @@ public class RealMail extends JavaPlugin {
         
         if (languageFile == null) {
             languageFile = new java.io.File(getDataFolder(), "language.yml");
+            if (!languageFile.exists()) {
+                try {
+                    InputStream in = getResource("language.yml");
+                    OutputStream out = new FileOutputStream(languageFile);
+                    byte[] buf = new byte[1024];
+                    int len;
+                    while((len=in.read(buf))>0){
+                        out.write(buf,0,len);
+                    }
+                    out.close();
+                    in.close();
+                } catch (IOException ex) {
+                    if (getConfig().getBoolean("verbose_errors", false)) {
+                        getLogger().log(Level.WARNING, "Could not create a default languages.yml file.");
+                    }
+                }
+            }
+            
         }
         languageConfig = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(languageFile);
         
         try {
-        org.mcstats.MetricsLite metrics = new org.mcstats.MetricsLite(this);
+            org.mcstats.MetricsLite metrics = new org.mcstats.MetricsLite(this);
             metrics.start();
         } catch (IOException e) {
             // Failed to submit the stats :-(
@@ -178,7 +205,7 @@ public class RealMail extends JavaPlugin {
                 sender.sendMessage(new String[] {ChatColor.GOLD+"RealMail v"+version, "Go to http://dev.bukkit.org/bukkit-plugins/realmail/ for updates."});
             } else {
                 if (!(sender instanceof Player)) {
-                    sender.sendMessage("This command can only be run by a player.");
+                    sender.sendMessage(prefix+ChatColor.WHITE+"This command can only be run by a player.");
                 } else {
                     //<editor-fold defaultstate="collapsed" desc="NonConsole Commands">
                     Player player = (Player) sender;
@@ -191,10 +218,10 @@ public class RealMail extends JavaPlugin {
                                     OfflinePlayer recipient = Bukkit.getOfflinePlayer(bookMeta.getTitle());
                                     sendMail(itemHand, player, recipient, true);
                                 } else {
-                                    sender.sendMessage(ChatColor.GOLD+"You may only send letters and packages");
+                                    sender.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.onlyLettersAndPackages", "You may only send letters and packages."));
                                 }
                             } else {
-                                player.sendMessage(ChatColor.GOLD+"You do not have permission to send mail from anywhere.");
+                                player.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.sendFromAnywhere", "You do not have permission to send mail from anywhere."));
                             }
                         } else if (args[0].equals("bulksend")) {
                             if (player.hasPermission("realmail.admin.bulkmail")) {
@@ -204,31 +231,31 @@ public class RealMail extends JavaPlugin {
                                     for (String p : players) {
                                         sendMail(itemHand, player, UUID.fromString(p), false);
                                     }
-                                    sender.sendMessage(ChatColor.GOLD+"Letter sent to all players on the server.");
+                                    sender.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.bulkSent", "Letter sent to all players on the server."));
                                 } else {
-                                    sender.sendMessage(ChatColor.GOLD+"You may only send letters and packages");
+                                    sender.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.onlyLettersAndPackages", "You may only send letters and packages."));
                                 }
                             } else {
-                                player.sendMessage(ChatColor.GOLD+"You do not have permission to mail players in bulk.");
+                                player.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.bulkSend", "You do not have permission to mail players in bulk."));
                             }
                         } else if (args[0].equals("spawn")) {
                             if (args.length != 2) {
-                                sender.sendMessage(ChatColor.GOLD+"Command syntax: /realmail spawn <mailbox|stationary>");
+                                sender.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("commandSyntax.spawn", "Command syntax: /realmail spawn <mailbox|stationary>"));
                             } else {
                                 if (args[1].equals("mailbox")) {
                                     if (player.hasPermission("realmail.admin.spawn.mailbox")) {
                                         giveMailbox(player);
                                     } else {
-                                        player.sendMessage(ChatColor.GOLD+"You do not have permission to spawn mailboxes.");
+                                        player.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.spawnMailbox", "You do not have permission to spawn mailboxes."));
                                     }
                                 } else if (args[1].equals("stationary")) {
                                     if (player.hasPermission("realmail.admin.spawn.stationary")) {
                                         giveStationary(player);
                                     } else {
-                                        player.sendMessage(ChatColor.GOLD+"You do not have permission to spawn stationary.");
+                                        player.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.spawnStationary", "You do not have permission to spawn stationary."));
                                     }
                                 } else {
-                                     sender.sendMessage(ChatColor.GOLD+"Command syntax: /realmail spawn <mailbox|stationary>");
+                                     sender.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("commandSyntax.spawn", "Command syntax: /realmail spawn <mailbox|stationary>"));
                                 }
                             }
                         } else if (args[0].equals("open")) {
@@ -237,23 +264,23 @@ public class RealMail extends JavaPlugin {
                                     if (Bukkit.getOfflinePlayer(args[1]) != null) {
                                         openMailbox(Bukkit.getOfflinePlayer(args[1]), player);
                                     } else {
-                                        player.sendMessage(ChatColor.GOLD+args[1]+" does not have a mailbox.");
+                                        player.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.doesntHaveMailbox", "{0} does not have a mailbox.").replaceAll("\\{0}", args[1]));
                                     }
                                 } else {
-                                    player.sendMessage(ChatColor.GOLD+"You do not have permission to view other players' mailboxes.");
+                                    player.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.viewOtherMailbox", "You do not have permission to view other players' mailboxes."));
                                 }
                             } else {
                                 if (player.hasPermission("realmail.admin.openMailboxAnywhere")) {
                                     openMailbox(player, player);
                                 } else {
-                                    player.sendMessage(ChatColor.GOLD+"You do not have permission to view your mailbox via command.");
+                                    player.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.openCommand", "You do not have permission to view your mailbox via command."));
                                 }
                             }
                         } else if (args[0].equals("new")) {
                             if (player.hasPermission("realmail.admin.spawn.stationary") || getConfig().getBoolean("let_players_spawn_stationary", false)) {
                                  giveStationary(player);
                             } else {
-                                player.sendMessage(ChatColor.GOLD+"You do not have permission to spawn stationary.");
+                                player.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.spawnStationary", "You do not have permission to spawn stationary.")); // TODO Start replaces with language compatible here
                             }
                         }/* else if (args[0].equals("subject")) {
                             ItemStack itemHand = player.getItemInHand();
@@ -263,10 +290,10 @@ public class RealMail extends JavaPlugin {
                                 } else {
 
                                     // TODO Remove subject
-                                    sender.sendMessage(ChatColor.GOLD+"Subject removed");
+                                    sender.sendMessage(prefix+ChatColor.WHITE+"Subject removed");
                                 }
                             } else {
-                                sender.sendMessage(ChatColor.GOLD+"You may only edit the subject of stationary and packages");
+                                sender.sendMessage(prefix+ChatColor.WHITE+"You may only edit the subject of stationary and packages");
                             }
                             
                         }*/
@@ -301,7 +328,7 @@ public class RealMail extends JavaPlugin {
         }
         if (title.length() > 32) {
             title = "Mailbox";
-            viewer.sendMessage(ChatColor.GOLD+"Opened "+ownerName+"'s mailbox.");
+            viewer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.openedMailbox", "Opened {0}'s mailbox.").replaceAll("\\{0}", ownerName));
         }
         Inventory mailInv = Bukkit.createInventory(viewer, getConfig().getInt("mailbox_rows", 4) * 9, title);
         List<org.bukkit.inventory.meta.BookMeta> letters = (List<org.bukkit.inventory.meta.BookMeta>) mailboxesConfig.getList(owner.getUniqueId()+".letters", new LinkedList<org.bukkit.inventory.meta.BookMeta>());
@@ -315,7 +342,7 @@ public class RealMail extends JavaPlugin {
             newBook.setItemMeta(letterMeta);
             HashMap leftover = mailInv.addItem(newBook);
             if (!leftover.isEmpty()) {
-                viewer.sendMessage(ChatColor.GOLD+"Not all letters could be shown. Please empty your mailbox.");
+                viewer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.notAllShown", "Not all letters could be shown. Please empty your mailbox."));
                 break;
             }
         }
@@ -353,22 +380,24 @@ public class RealMail extends JavaPlugin {
                 mailboxesConfig.save(mailboxesFile);
                 fromPlayer.getInventory().remove(mailItem);
                 if (sendMessages) {
-                    fromPlayer.sendMessage(ChatColor.GOLD+"Letter sent to "+toPlayer.getName()+".");
+                    fromPlayer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.letterSent", "Letter sent to {0}.").replaceAll("\\{0}", toPlayer.getName()));
                 }
                 udpateMailboxFlags(toPlayer.getPlayer());
                 if (toPlayer.getPlayer() != null) {
-                    toPlayer.getPlayer().sendMessage(ChatColor.GOLD+"You've got mail! Check your mailbox. Use /mail to learn how to craft one.");
+                    toPlayer.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.gotMail", "You've got mail! Check your mailbox. Use /mail to learn how to craft one."));
                 }
             } catch (Exception ex) {
-                fromPlayer.sendMessage(ChatColor.GOLD+"Failed to send the letter.");
-                ex.printStackTrace();
+                fromPlayer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.failedToSend", "Failed to send the letter."));
+                if (getConfig().getBoolean("verbose_errors", false)) {
+                    ex.printStackTrace();
+                }
             }
         } else {
             if (sendMessages) {
-                fromPlayer.sendMessage(ChatColor.GOLD+"Recipient's mailbox was full. Please try again later.");
+                fromPlayer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.mailboxFull", "Recipient's mailbox was full. Please try again later."));
             }
             if (toPlayer.getPlayer() != null) {
-                toPlayer.getPlayer().sendMessage(ChatColor.GOLD+fromPlayer.getName()+" tried to send you mail, but you mailbox was full. Consider emptying it out.");
+                toPlayer.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.mailboxFullReceiver", "{0} tried to send you mail, but you mailbox was full. Consider emptying it out.").replaceAll("\\{0}", fromPlayer.getName()));
             }
         }
         return true;
@@ -403,22 +432,24 @@ public class RealMail extends JavaPlugin {
                 mailboxesConfig.save(mailboxesFile);
                 fromPlayer.getInventory().remove(mailItem);
                 if (sendMessages) {
-                    fromPlayer.sendMessage(ChatColor.GOLD+"Letter sent to "+Bukkit.getOfflinePlayer(toUUID).getName()+".");
+                    fromPlayer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.letterSent", "Letter sent to {0}.").replaceAll("\\{0}", Bukkit.getOfflinePlayer(toUUID).getName()));
                 }
                 udpateMailboxFlags(Bukkit.getOfflinePlayer(toUUID));
                 if (Bukkit.getPlayer(toUUID) != null) {
-                    Bukkit.getPlayer(toUUID).sendMessage(ChatColor.GOLD+"You've got mail! Check your mailbox. Use /mail to learn how to craft one.");
+                    Bukkit.getPlayer(toUUID).sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.gotMail", "You've got mail! Check your mailbox. Use /mail to learn how to craft one."));
                 }
             } catch (Exception ex) {
-                fromPlayer.sendMessage(ChatColor.GOLD+"Failed to send the letter.");
-                ex.printStackTrace();
+                fromPlayer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.failedToSend", "Failed to send the letter."));
+                if (getConfig().getBoolean("verbose_errors", false)) {
+                    ex.printStackTrace();
+                }
             }
         } else {
             if (sendMessages) {
-                fromPlayer.sendMessage(ChatColor.GOLD+"Recipient's mailbox was full. Please try again later.");
+                fromPlayer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.mailboxFull", "Recipient's mailbox was full. Please try again later."));
             }
             if (Bukkit.getPlayer(toUUID) != null) {
-                Bukkit.getPlayer(toUUID).sendMessage(ChatColor.GOLD+fromPlayer.getName()+" tried to send you mail, but you mailbox was full. Consider emptying it out.");
+                Bukkit.getPlayer(toUUID).sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.mailboxFullReceiver", "{0} tried to send you mail, but you mailbox was full. Consider emptying it out.").replaceAll("\\{0}", fromPlayer.getName()));
             }
         }
         return true;
@@ -467,38 +498,38 @@ public class RealMail extends JavaPlugin {
                     chestInv.addItem(bookStack);
                     setSignStatus(true, chest.getBlock(), toString);
                     if (!bulk) {
-                        fromPlayer.sendMessage("Mail Sent!");
+                        fromPlayer.sendMessage(prefix+ChatColor.WHITE+"Mail Sent!");
                         fromPlayer.setItemInHand(new org.bukkit.inventory.ItemStack(0));
                     }
                     if (target != null) {
-                        target.sendMessage("You've got mail!");
+                        target.sendMessage(prefix+ChatColor.WHITE+"You've got mail!");
                     }
                     // If there's a sign, mark as unread
                 } else {
                     if (target != null) {
-                        target.sendMessage(fromPlayer.getDisplayName()+" tried to send you a message, but your mailbox is missing!");
-                        target.sendMessage("Use "+org.bukkit.ChatColor.ITALIC+"/rm setmailbox"+org.bukkit.ChatColor.RESET+" on a chest.");
+                        target.sendMessage(prefix+ChatColor.WHITE+fromPlayer.getDisplayName()+" tried to send you a message, but your mailbox is missing!");
+                        target.sendMessage(prefix+ChatColor.WHITE+"Use "+org.bukkit.ChatColor.ITALIC+"/rm setmailbox"+org.bukkit.ChatColor.RESET+" on a chest.");
                     }
                     if (!bulk) {
-                        fromPlayer.sendMessage("Failed to send.");
-                        fromPlayer.sendMessage("They don't have a mailbox!");
+                        fromPlayer.sendMessage(prefix+ChatColor.WHITE+"Failed to send.");
+                        fromPlayer.sendMessage(prefix+ChatColor.WHITE+"They don't have a mailbox!");
                     }
                 }
             } else {
                 if (target != null) {
-                    target.sendMessage(fromPlayer.getDisplayName()+" tried to send you a message, but you don't have a mailbox!");
-                    target.sendMessage("Use "+org.bukkit.ChatColor.ITALIC+"/rm setmailbox"+org.bukkit.ChatColor.RESET+" on a chest.");
+                    target.sendMessage(prefix+ChatColor.WHITE+fromPlayer.getDisplayName()+" tried to send you a message, but you don't have a mailbox!");
+                    target.sendMessage(prefix+ChatColor.WHITE+"Use "+org.bukkit.ChatColor.ITALIC+"/rm setmailbox"+org.bukkit.ChatColor.RESET+" on a chest.");
                 }
                 if (!bulk) {
-                    fromPlayer.sendMessage("Failed to send.");
-                    fromPlayer.sendMessage("They don't have a mailbox!");
+                    fromPlayer.sendMessage(prefix+ChatColor.WHITE+"Failed to send.");
+                    fromPlayer.sendMessage(prefix+ChatColor.WHITE+"They don't have a mailbox!");
                 }
             }
 
         } catch (Exception ex) {
             ex.printStackTrace();
             if (!bulk) {
-                fromPlayer.sendMessage("Failed to mail the book.");
+                fromPlayer.sendMessage(prefix+ChatColor.WHITE+"Failed to mail the book.");
             }
         }*/
         return true;
@@ -548,7 +579,7 @@ public class RealMail extends JavaPlugin {
                 if (is.getType() == Material.PAPER && is.hasItemMeta() && is.getItemMeta().hasDisplayName() && is.getItemMeta().getDisplayName().contains("Mailbox Recipe")) {
                     e.getPlayer().getInventory().removeItem(toBeRemoved);
                     giveMailbox(e.getPlayer());
-                    e.getPlayer().sendMessage(ChatColor.GOLD+"You exchanged your recipe for a mailbox.");
+                    e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.exchangedRecipe", "You exchanged your recipe for a mailbox."));
                 }
                 /* Cycle texture */
                 else if (is.getType() == Material.SKULL_ITEM && (e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK) && is.getItemMeta().hasLore() && is.getItemMeta().getLore().get(1).contains("Punch to change texture")) {
@@ -562,10 +593,10 @@ public class RealMail extends JavaPlugin {
                     } else if (is.getItemMeta().getLore().get(0).contains("Green")) {
                         getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdBlue+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureBlue+"\"}]}}}");
                     }
-                    e.getPlayer().sendMessage(ChatColor.GOLD+"You changed your mailbox's texture.");
+                    e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.textureChange", "You changed your mailbox's texture."));
                 }
                 /* Stationary Stuff */
-                else if (is.getType() == Material.WRITTEN_BOOK && is.getItemMeta().hasLore() && (is.getItemMeta().getDisplayName().contains("§rLetter") || is.getItemMeta().getDisplayName().contains("§rPackage"))) {
+                else if (is.getType() == Material.WRITTEN_BOOK && is.hasItemMeta() && is.getItemMeta().hasLore() && is.getItemMeta().hasDisplayName() && (is.getItemMeta().getDisplayName().contains("§rLetter") || is.getItemMeta().getDisplayName().contains("§rPackage"))) {
                         if (e.getClickedBlock() != null && e.getClickedBlock().getType().equals(Material.SKULL)) {
 
                             List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
@@ -582,7 +613,7 @@ public class RealMail extends JavaPlugin {
                                             newLetterItem.setItemMeta(newLetter);
                                             RealMail.this.sendMail(newLetterItem, e.getPlayer(), recipient, true);
                                         } else {
-                                            e.getPlayer().sendMessage(ChatColor.GOLD+"You do not have permission to send mail.");
+                                            e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.sendMail", "You do not have permission to send mail."));
                                         }
                                         break players;
                                     }
@@ -612,7 +643,7 @@ public class RealMail extends JavaPlugin {
                             if (mailboxOwner.getUniqueId().equals(e.getPlayer().getUniqueId()) || e.getPlayer().hasPermission("realmail.admin.openMailboxAnywhere.others")) {
                                 openMailbox(mailboxOwner, e.getPlayer());
                             } else {
-                                e.getPlayer().sendMessage(ChatColor.GOLD+"That's not your mailbox. Use /mail to find out how to craft your own.");
+                                e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.notYourMailbox", "That's not your mailbox. Use /mail to find out how to craft your own."));
                             }
                         } else {
                             openMailbox(mailboxOwner, e.getPlayer());
@@ -625,28 +656,41 @@ public class RealMail extends JavaPlugin {
         //<editor-fold defaultstate="collapsed" desc="Signing Letters">
         @org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.NORMAL)
         public void onEditBook(org.bukkit.event.player.PlayerEditBookEvent e) {
-            if (e.isSigning() && (e.getNewBookMeta().getDisplayName().contains("Stationary") || e.getNewBookMeta().getDisplayName().contains("Package"))) {
-                org.bukkit.inventory.meta.BookMeta bookMeta = e.getNewBookMeta();
-                if (bookMeta.getDisplayName().contains("Stationary")) {
-                    bookMeta.setDisplayName("§rLetter");
+            if (e.getPreviousBookMeta() != null && e.getPreviousBookMeta().hasDisplayName() && (e.getPreviousBookMeta().getDisplayName().contains("Stationary") || e.getPreviousBookMeta().getDisplayName().contains("Package"))) {
+                
+                BookMeta newBM = e.getNewBookMeta();
+                if (e.getPreviousBookMeta().getDisplayName().contains("Package")) {
+                    newBM.setDisplayName("§rPackage");
+                    newBM.setLore(e.getPreviousBookMeta().getLore());
+                } else {
+                    newBM.setDisplayName("§rStationary");
+                    newBM.setLore(Arrays.asList("§r§7Right-click a mailbox to send after signing","§r§7Use the name of the recipient as the title"));
                 }
+                e.setNewBookMeta(newBM);
                 
-                List<String> bookLore = bookMeta.getLore();
-                bookLore.add("§r§7To: "+bookMeta.getTitle());
-                bookMeta.setLore(bookLore);
                 
-                if (bookMeta.getPageCount() >= 1) {
-                    String firstPage = bookMeta.getPages().get(0);
-                    firstPage = firstPage.split("\n")[0];
-                    if (firstPage.matches("^(.*)\\[Subject:(.*)\\](.*)$")) { // [Subject:Test Subject]
-                        
-                        firstPage = firstPage.replaceFirst("^(.*)\\[Subject:", "");
-                        firstPage = firstPage.replaceFirst("\\](.*)", "");
-                        bookMeta.setDisplayName(bookMeta.getDisplayName()+" - "+firstPage);
+                if (e.isSigning()) {
+                    if (newBM.getDisplayName().contains("Stationary")) {
+                        newBM.setDisplayName("§rLetter");
                     }
+
+                    List<String> bookLore = newBM.getLore();
+                    bookLore.add("§r§7To: "+newBM.getTitle());
+                    newBM.setLore(bookLore);
+
+                    if (newBM.getPageCount() >= 1) {
+                        String firstPage = newBM.getPages().get(0); // [subject|subj|s:Test Subject;moon|moonrune|rune;burn|burnonread|selfdestruct|destruct]
+                        firstPage = firstPage.split("\n")[0];
+                        if (firstPage.matches("^(.*)\\[Subject:(.*)\\](.*)$")) { // [Subject:Test Subject]
+
+                            firstPage = firstPage.replaceFirst("^(.*)\\[Subject:", "");
+                            firstPage = firstPage.replaceFirst("\\](.*)", "");
+                            newBM.setDisplayName(newBM.getDisplayName()+" - "+firstPage);
+                        }
+                    }
+
+                    e.setNewBookMeta(newBM);
                 }
-                        
-                e.setNewBookMeta(bookMeta);
             }
         }
         //</editor-fold>
@@ -693,14 +737,14 @@ public class RealMail extends JavaPlugin {
                 boolean disallowCursor = false;
                 boolean disallowCurrent = false;
                 
-                if (cursor.hasItemMeta()) {
+                if (cursor != null && cursor.hasItemMeta()) {
                     if (cursor.getItemMeta().hasDisplayName()) {
                         if (cursor.getItemMeta().getDisplayName().contains("Stationary") || cursor.getItemMeta().getDisplayName().contains("Letter") || cursor.getItemMeta().getDisplayName().contains("Package")) {
                             disallowCursor = true;
                         }
                     }
                 }
-                if (current.hasItemMeta()) {
+                if (current != null && current.hasItemMeta()) {
                     if (current.getItemMeta().hasDisplayName()) {
                         if (current.getItemMeta().getDisplayName().contains("Stationary") || current.getItemMeta().getDisplayName().contains("Letter") || current.getItemMeta().getDisplayName().contains("Package")) {
                             disallowCurrent = true;
@@ -723,7 +767,7 @@ public class RealMail extends JavaPlugin {
                         if (current.getItemMeta().hasDisplayName()) {
                             if (current.getItemMeta().getDisplayName().contains("Stationary") || current.getItemMeta().getDisplayName().contains("Package")) {
                                 if (cursor != null && cursor.hasItemMeta() && cursor.getItemMeta().hasDisplayName() && cursor.getItemMeta().getDisplayName().contains("Package")) {
-                                    e.getWhoClicked().sendMessage(ChatColor.GOLD+"You can't put packages inside of packages. You'll create package-ception.");
+                                    e.getWhoClicked().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.packageInPackage", "You can't put packages inside of packages. You'll create package-ception."));
                                     e.setResult(Event.Result.DENY);
                                 } else {
                                     if (e.getWhoClicked().hasPermission("realmail.user.attach")) {
@@ -763,7 +807,7 @@ public class RealMail extends JavaPlugin {
                                                 packagesConfig.set(code, attachments);
                                                 try {
                                                     packagesConfig.save(packagesFile);
-                                                    e.getWhoClicked().sendMessage(ChatColor.GOLD+cursor.getType().name()+" x"+cursor.getAmount()+" attached.");
+                                                    e.getWhoClicked().sendMessage(prefix+ChatColor.WHITE+cursor.getType().name()+" x"+cursor.getAmount()+" attached.");
                                                     im.setDisplayName("§rPackage");
                                                     current.setItemMeta(im);
                                                     e.setCursor(new ItemStack(Material.AIR));
@@ -771,17 +815,17 @@ public class RealMail extends JavaPlugin {
                                                     //cursor.setAmount(0);
                                                     e.setResult(Event.Result.DENY);
                                                 } catch (Exception ex) {
-                                                    e.getWhoClicked().sendMessage(ChatColor.GOLD+"Could not attach the item.");
+                                                    e.getWhoClicked().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.couldNotAttach", "Could not attach the item."));
                                                 }
                                             } else {
-                                                e.getWhoClicked().sendMessage(ChatColor.GOLD+"Max items already attached. ("+getConfig().getInt("max_attachments", 4)+")");
+                                                e.getWhoClicked().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.maxAlreadyAttached", "Max items already attached. ({0})").replaceAll("\\{0}", getConfig().getInt("max_attachments", 4)+""));
                                                 e.setResult(Event.Result.DENY);
                                             }
                                         } else {
-                                            e.getWhoClicked().sendMessage(ChatColor.GOLD+"Attaching and detaching items in creative is currently disabled due to bugs.");
+                                            e.getWhoClicked().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.attachInCreative", "Attaching and detaching items in creative is currently disabled due to bugs."));
                                         }
                                     } else {
-                                        e.getWhoClicked().sendMessage(ChatColor.GOLD+"You do not have permission to attach items.");
+                                        e.getWhoClicked().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.attachments", "You do not have permission to attach items."));
                                         e.setResult(Event.Result.DENY);
                                     }
                                 }
@@ -826,12 +870,14 @@ public class RealMail extends JavaPlugin {
                                         packagesConfig.save(packagesFile);
                                         e.setResult(Event.Result.DENY);
                                     } catch (Exception ex) {
-                                        e.getWhoClicked().sendMessage(ChatColor.GOLD+"Could not detach item.");
-                                        ex.printStackTrace();
+                                        e.getWhoClicked().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.couldNotDetach", "Could not detach item."));
+                                        if (getConfig().getBoolean("verbose_errors", false)) {
+                                            ex.printStackTrace();
+                                        }
                                     }
                                     
                                 } else {
-                                    e.getWhoClicked().sendMessage(ChatColor.GOLD+"Cound not detach item, unknown code.");
+                                    e.getWhoClicked().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.couldNotDetachCode", "Cound not detach item, unknown code."));
                                 }
                                 break;
                             }
@@ -861,7 +907,9 @@ public class RealMail extends JavaPlugin {
                     mailboxesConfig.save(mailboxesFile);
                 } catch (Exception ex) {
                     getLogger().log(Level.INFO, "Failed to save {0}''s mailbox.", e.getPlayer().getName());
-                    ex.printStackTrace();
+                    if (getConfig().getBoolean("verbose_errors", false)) {
+                        ex.printStackTrace();
+                    }
                 }
             }
         }
@@ -873,7 +921,7 @@ public class RealMail extends JavaPlugin {
             if (e.getItemInHand() != null) {
                 ItemStack is = e.getItemInHand();
                 
-                if (is.getType() == Material.SKULL_ITEM && is.getItemMeta().hasLore() && is.getItemMeta().getLore().get(1).contains("Punch to change texture")) {
+                if (is.getType() == Material.SKULL_ITEM && is.getItemMeta().hasLore() && is.getItemMeta().getLore().size() >= 2 && is.getItemMeta().getLore().get(1).contains("Punch to change texture")) {
                     
                     List<Location> locations = (List<Location>) mailboxesConfig.getList(e.getPlayer().getUniqueId()+".mailboxes", new LinkedList<Location>());
                     locations.add(e.getBlock().getLocation());
@@ -887,10 +935,12 @@ public class RealMail extends JavaPlugin {
                     
                     try {
                         mailboxesConfig.save(mailboxesFile);
-                        e.getPlayer().sendMessage(ChatColor.GOLD+"Mailbox placed");
+                        e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.mailboxPlaces", "Mailbox placed."));
                     } catch (Exception ex) {
-                        e.getPlayer().sendMessage(ChatColor.GOLD+"Failed to place mailbox");
-                        ex.printStackTrace();
+                        e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.failedToPlaceMailbox", "Failed to place mailbox."));
+                        if (getConfig().getBoolean("verbose_errors", false)) {
+                            ex.printStackTrace();
+                        }
                     }
                 }
                 
@@ -916,8 +966,10 @@ public class RealMail extends JavaPlugin {
                             e.getBlock().setType(Material.AIR);
                             getServer().dispatchCommand(getServer().getConsoleSender(), "summon Item "+loc.getBlockX()+" "+loc.getBlockY()+" "+loc.getBlockZ()+" {Item:{id:minecraft:skull, Count:1, Damage: 3, tag:{display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdBlue+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureBlue+"\"}]}}}}}");
                         } catch (Exception ex) {
-                            e.getPlayer().sendMessage(ChatColor.GOLD+"Failed to remove mailbox");
-                            ex.printStackTrace();
+                            e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.failedToRemoveMailbox", "Failed to remove mailbox."));
+                            if (getConfig().getBoolean("verbose_errors", false)) {
+                                ex.printStackTrace();
+                            }
                         }
                         return;
                     }
@@ -931,12 +983,12 @@ public class RealMail extends JavaPlugin {
         public void onCraft(org.bukkit.event.inventory.CraftItemEvent e) {
             if (e.getRecipe().getResult().hasItemMeta() && e.getRecipe().getResult().getItemMeta().hasLore() && e.getRecipe().getResult().getItemMeta().getDisplayName().contains(stationaryMeta.getDisplayName())) { // Stationary
                 if (!e.getWhoClicked().hasPermission("realmail.user.craft.stationary")) {
-                    e.getWhoClicked().sendMessage(ChatColor.GOLD+"You do not have permission to craft stationary.");
+                    e.getWhoClicked().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.craftStationary", "You do not have permission to craft stationary."));
                     e.setResult(Event.Result.DENY);
                 }
             } else if (e.getRecipe().getResult().hasItemMeta() && e.getRecipe().getResult().getItemMeta().hasLore() && e.getRecipe().getResult().getItemMeta().getDisplayName().contains(mailboxRecipeMeta.getDisplayName())) { // Mailbox
                 if (!e.getWhoClicked().hasPermission("realmail.user.craft.stationary")) {
-                    e.getWhoClicked().sendMessage(ChatColor.GOLD+"You do not have permission to craft a mailbox.");
+                    e.getWhoClicked().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.craftMailbox", "You do not have permission to craft a mailbox."));
                     e.setResult(Event.Result.DENY);
                 }
             }
@@ -963,7 +1015,7 @@ public class RealMail extends JavaPlugin {
                         try {
                             Bukkit.getScheduler().runTaskLater(RealMail.this, new LoginRunnable(e), 20*10);
                         } catch (IllegalArgumentException ex) {
-                            e.getPlayer().sendMessage(ChatColor.GOLD+"You've got mail! Check your mailbox.");
+                            e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.gotMailLogin", "You've got mail! Check your mailbox."));
                         }
                     }
                 }
@@ -992,7 +1044,7 @@ public class RealMail extends JavaPlugin {
 
         @Override
         public void run() {
-           event.getPlayer().sendMessage(ChatColor.GOLD+"You've got mail! Check your mailbox.");
+           event.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.gotMailLogin", "You've got mail! Check your mailbox."));
         }
         
     }

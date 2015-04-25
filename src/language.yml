@@ -1,0 +1,42 @@
+#help:
+#  crafting:
+#  usage:
+#  packaging:
+#  admin:
+commandSyntax:
+  spawn: "Command syntax: /realmail spawn <mailbox|stationary>"
+noperm:
+  sendFromAnywhere: "You do not have permission to send mail from anywhere."
+  bulkSend: "You do not have permission to mail players in bulk."
+  spawnMailbox: "You do not have permission to spawn mailboxes."
+  craftMailbox: "You do not have permission to craft a mailbox."
+  spawnStationary: "You do not have permission to spawn stationary."
+  craftStationary: "You do not have permission to craft stationary."
+  viewOtherMailbox: "You do not have permission to view other players' mailboxes."
+  openCommand: "You do not have permission to view your mailbox via command."
+  sendMail: "You do not have permission to send mail."
+  attachments: "You do not have permission to attach items."
+mail:
+  onlyLettersAndPackages: "You may only send letters and packages."
+  bulkSent: "Letter sent to all players on the server."
+  doesntHaveMailbox: "{0} does not have a mailbox."
+  notAllShown: "Not all letters could be shown. Please empty your mailbox."
+  letterSent: "Letter sent to {0}."
+  gotMail: "You've got mail! Check your mailbox. Use /mail to learn how to craft one."
+  gotMailLogin: "You've got mail! Check your mailbox."
+  failedToSend: "Failed to send the letter."
+  mailboxFull: "Recipient's mailbox was full. Please try again later."
+  mailboxFullReceiver: "{0} tried to send you mail, but you mailbox was full. Consider emptying it out."
+  exchangedRecipe: "You exchanged your recipe for a mailbox."
+  textureChange: "You changed your mailbox's texture."
+  notYourMailbox: "That's not your mailbox. Use /mail to find out how to craft your own."
+  packageInPackage: "You can't put packages inside of packages. You'll create package-ception."
+  couldNotAttach: "Could not attach the item."
+  couldNotDetach: "Could not detach item."
+  couldNotDetachCode: "Cound not detach item, unknown code."
+  maxAlreadyAttached: "Max items already attached. ({0})"
+  attachInCreative: "Attaching and detaching items in creative is currently disabled due to bugs."
+  mailboxPlaced: "Mailbox placed."
+  failedToPlaceMailbox: "Failed to place mailbox."
+  failedToRemoveMailbox: "Failed to remove mailbox."
+  openedMailbox: "Opened {0}'s mailbox."
