@@ -43,7 +43,7 @@ public class RealMail extends JavaPlugin {
 
     // TODO Add letter delivery queue for the deliver at a specific time option
     
-    private final String version = "0.2.9";
+    private final String version = "0.3.0";
     private org.bukkit.configuration.file.FileConfiguration mailboxesConfig = null;
     private java.io.File mailboxesFile = null;
     private org.bukkit.configuration.file.FileConfiguration packagesConfig = null;
@@ -308,7 +308,7 @@ public class RealMail extends JavaPlugin {
     }
     
     public void giveMailbox(Player ply) {
-        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+ply.getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdBlue+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureBlue+"\"}]}}}");
+        getServer().dispatchCommand(getServer().getConsoleSender(), "minecraft:give "+ply.getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdBlue+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureBlue+"\"}]}}}");
     }
     
     public void giveStationary(Player ply) {
@@ -585,13 +585,13 @@ public class RealMail extends JavaPlugin {
                 else if (is.getType() == Material.SKULL_ITEM && (e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK) && is.getItemMeta().hasLore() && is.getItemMeta().getLore().get(1).contains("Punch to change texture")) {
                     e.getPlayer().getInventory().removeItem(toBeRemoved);
                     if (is.getItemMeta().getLore().get(0).contains("Blue")) {
-                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7White\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdWhite+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureWhite+"\"}]}}}");
+                        getServer().dispatchCommand(getServer().getConsoleSender(), "minecraft:give "+e.getPlayer().getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7White\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdWhite+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureWhite+"\"}]}}}");
                     } else if (is.getItemMeta().getLore().get(0).contains("White")) {
-                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Red\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdRed+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureRed+"\"}]}}}");
+                        getServer().dispatchCommand(getServer().getConsoleSender(), "minecraft:give "+e.getPlayer().getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Red\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdRed+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureRed+"\"}]}}}");
                     } else if (is.getItemMeta().getLore().get(0).contains("Red")) {
-                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Green\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdGreen+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureGreen+"\"}]}}}");
+                        getServer().dispatchCommand(getServer().getConsoleSender(), "minecraft:give "+e.getPlayer().getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Green\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdGreen+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureGreen+"\"}]}}}");
                     } else if (is.getItemMeta().getLore().get(0).contains("Green")) {
-                        getServer().dispatchCommand(getServer().getConsoleSender(), "give "+e.getPlayer().getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdBlue+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureBlue+"\"}]}}}");
+                        getServer().dispatchCommand(getServer().getConsoleSender(), "minecraft:give "+e.getPlayer().getName()+" minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\""+mailboxIdBlue+"\",Name:\"ha1fBit\",Properties:{textures:[{Value:\""+mailboxTextureBlue+"\"}]}}}");
                     }
                     e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.textureChange", "You changed your mailbox's texture."));
                 }
