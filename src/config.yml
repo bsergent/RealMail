@@ -39,8 +39,8 @@
 # Show instructions on how to use and craft on /mail
 # 
 # let_players_spawn_stationary: false
-# Will let players spawn in stationary using "/mail new" instead of crafting
-# This stationary will not be tradable with villagers
+# Will let players spawn in stationery using "/mail new" instead of crafting
+# This stationery will not be tradable with villagers
 # 
 # delivery_time: 6000
 # The time of day in ticks that queued mail will be delivered

@@ -4,14 +4,14 @@
 #  packaging:
 #  admin:
 commandSyntax:
-  spawn: "Command syntax: /realmail spawn <mailbox|stationary>"
+  spawn: "Command syntax: /realmail spawn <mailbox|stationery>"
 noperm:
   sendFromAnywhere: "You do not have permission to send mail from anywhere."
   bulkSend: "You do not have permission to mail players in bulk."
   spawnMailbox: "You do not have permission to spawn mailboxes."
   craftMailbox: "You do not have permission to craft a mailbox."
-  spawnStationary: "You do not have permission to spawn stationary."
-  craftStationary: "You do not have permission to craft stationary."
+  spawnStationary: "You do not have permission to spawn stationery."
+  craftStationary: "You do not have permission to craft stationery."
   viewOtherMailbox: "You do not have permission to view other players' mailboxes."
   openCommand: "You do not have permission to view your mailbox via command."
   sendMail: "You do not have permission to send mail."
