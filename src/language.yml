@@ -16,6 +16,7 @@ noperm:
   openCommand: "You do not have permission to view your mailbox via command."
   sendMail: "You do not have permission to send mail."
   attachments: "You do not have permission to attach items."
+  seeAdminHelp: "You do not have permission to see the admin commands."
 mail:
   onlyLettersAndPackages: "You may only send letters and packages."
   bulkSent: "Letter sent to all players on the server."

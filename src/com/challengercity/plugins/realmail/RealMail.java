@@ -158,8 +158,8 @@ public class RealMail extends JavaPlugin {
                     ChatColor.GOLD+""+ChatColor.BOLD+"RealMail - Crafting Recipes",
                     ChatColor.GOLD+"Mailbox:",
                     ChatColor.DARK_GRAY+"  --"+ChatColor.WHITE+"w   w"+ChatColor.WHITE+" = wool (1x)",
-                    ChatColor.GRAY+"  i i i   i"+ChatColor.GOLD+" = iron ingot (5x)",
-                    ChatColor.GRAY+"  i "+ChatColor.DARK_RED+"c"+ChatColor.GRAY+"i   c"+ChatColor.WHITE+" = chest (1x)",
+                    ChatColor.GRAY+"  i i i   i"+ChatColor.WHITE+" = iron ingot (5x)",
+                    ChatColor.GRAY+"  i "+ChatColor.DARK_RED+"c"+ChatColor.GRAY+"i   "+ChatColor.DARK_RED+"c"+ChatColor.WHITE+" = chest (1x)",
                     ChatColor.GOLD+"Stationery:",
                     ChatColor.WHITE+"  1x paper and 1x feather",
                     ChatColor.WHITE+"Use /mail 2 for usage"
@@ -187,17 +187,21 @@ public class RealMail extends JavaPlugin {
                         ChatColor.WHITE+"  1. Pick up the package with your cursor",
                         ChatColor.WHITE+"  2. Right-click empty slots with the package",
                         ChatColor.WHITE+"    Example: http://bit.ly/1Cijgbl",
-                        ChatColor.WHITE+"Use /mail 4 for administration"
+                        sender.hasPermission("realmail.admin.seeAdminHelp")?ChatColor.WHITE+"Use /mail 4 for administration":ChatColor.WHITE+"Use /mail 1 for crafting"
                     });
-                } else if (args[0].equals("4")) { // Show attachments
-                    sender.sendMessage(new String[] {
-                        ChatColor.GOLD+""+ChatColor.BOLD+"RealMail - Administration",
-                        ChatColor.GOLD+"/mail send "+ChatColor.WHITE+" Send the letter in your hand to the addressed player",
-                        ChatColor.GOLD+"/mail bulksend "+ChatColor.WHITE+" Send the letter in your hand to all players with mailboxes",
-                        ChatColor.GOLD+"/mail spawn <mailbox|stationery> "+ChatColor.WHITE+" Spawn in a mailbox or some stationery",
-                        ChatColor.GOLD+"/mail open [player] "+ChatColor.WHITE+" Open your mailbox or that of another player",
-                        ChatColor.WHITE+"Use /mail 1 for crafting"
-                    });
+                } else if (args[0].equals("4")) { // Show adminministration
+                    if (sender.hasPermission("realmail.admin.seeAdminHelp")) {
+                        sender.sendMessage(new String[] {
+                            ChatColor.GOLD+""+ChatColor.BOLD+"RealMail - Administration",
+                            ChatColor.GOLD+"/mail send "+ChatColor.WHITE+" Send the letter in your hand to the addressed player",
+                            ChatColor.GOLD+"/mail bulksend "+ChatColor.WHITE+" Send the letter in your hand to all players with mailboxes",
+                            ChatColor.GOLD+"/mail spawn <mailbox|stationery> "+ChatColor.WHITE+" Spawn in a mailbox or some stationery",
+                            ChatColor.GOLD+"/mail open [player] "+ChatColor.WHITE+" Open your mailbox or that of another player",
+                            ChatColor.WHITE+"Use /mail 1 for crafting"
+                        });
+                    } else {
+                        sender.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.seeAdminHelp", "You do not have permission to see the admin commands."));
+                    }
                 }
             } //</editor-fold>
             
