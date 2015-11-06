@@ -931,7 +931,7 @@ public class RealMail extends JavaPlugin {
                     
                     try {
                         mailboxesConfig.save(mailboxesFile);
-                        e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.mailboxPlaces", "Mailbox placed."));
+                        e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.mailboxPlaced", "Mailbox placed."));
                     } catch (Exception ex) {
                         e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.failedToPlaceMailbox", "Failed to place mailbox."));
                         if (getConfig().getBoolean("verbose_errors", false)) {
