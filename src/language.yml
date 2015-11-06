@@ -1,8 +1,3 @@
-#help:
-#  crafting:
-#  usage:
-#  packaging:
-#  admin:
 commandSyntax:
   spawn: "Command syntax: /realmail spawn <mailbox|stationery>"
 noperm:
@@ -41,3 +36,4 @@ mail:
   failedToPlaceMailbox: "Failed to place mailbox."
   failedToRemoveMailbox: "Failed to remove mailbox."
   openedMailbox: "Opened {0}'s mailbox."
+  unknownRecipient: "Could not sign. {0} is not a known user on this server."

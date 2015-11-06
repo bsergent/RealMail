@@ -678,8 +678,14 @@ public class RealMail extends JavaPlugin {
                             newBM.setDisplayName(newBM.getDisplayName()+" - "+firstPage);
                         }
                     }
-
-                    e.setNewBookMeta(newBM);
+                    
+                    // Check if the recipient exists before signing
+                    if (mailboxesConfig.getList("players", new LinkedList<String>()).contains(Bukkit.getOfflinePlayer(newBM.getTitle()).getUniqueId()+"")) {
+                        e.setNewBookMeta(newBM);
+                    } else { // TODO Make sure to still save the book like when you hit "Done" even when the signing fails
+                        e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.unknownRecipient", "Could not sign. {0} is not a known user on this server.").replaceAll("\\{0}", newBM.getTitle()));
+                        e.setSigning(false);
+                    }
                 }
             }
         }
