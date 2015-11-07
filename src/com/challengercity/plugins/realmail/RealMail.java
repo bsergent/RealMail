@@ -41,9 +41,9 @@ import org.bukkit.plugin.java.JavaPlugin;
  */
 public class RealMail extends JavaPlugin {
 
-    // TODO Add letter delivery queue for the deliver at a specific time option
+    // TODO Add letter delivery queue to deliver at a specific time option
     
-    private final String version = "0.3.1";
+    private final String version = "0.3.2";
     private org.bukkit.configuration.file.FileConfiguration mailboxesConfig = null;
     private java.io.File mailboxesFile = null;
     private org.bukkit.configuration.file.FileConfiguration packagesConfig = null;
@@ -54,7 +54,7 @@ public class RealMail extends JavaPlugin {
     private org.bukkit.inventory.meta.BookMeta stationeryMeta = null;
     private String prefix = ChatColor.WHITE+"["+ChatColor.GOLD+"Mail"+ChatColor.WHITE+"]";
     
-    /* Mailbox Commands */
+    /* Mailbox Textures */
     private final String mailboxTextureBlue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjZhNDllZmFhYWI1MzI1NTlmZmY5YWY3NWRhNmFjNGRkNzlkMTk5ZGNmMmZkNDk3Yzg1NDM4MDM4NTY0In19fQ==";
     private final String mailboxIdBlue = "48614330-6c44-47be-85ec-33ed037cf48c";
     private final String mailboxTextureWhite = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTM5ZTE5NzFjYmMzYzZmZWFhYjlkMWY4NWZjOWQ5YmYwODY3NjgzZjQxMjk1NWI5NjExMTdmZTY2ZTIifX19";
@@ -323,7 +323,7 @@ public class RealMail extends JavaPlugin {
         Inventory mailInv = Bukkit.createInventory(viewer, getConfig().getInt("mailbox_rows", 4) * 9, title);
         List<org.bukkit.inventory.meta.BookMeta> letters = (List<org.bukkit.inventory.meta.BookMeta>) mailboxesConfig.getList(owner.getUniqueId()+".letters", new LinkedList<org.bukkit.inventory.meta.BookMeta>());
         for (org.bukkit.inventory.meta.BookMeta letterMeta : letters) {
-            ItemStack newBook = null;
+            ItemStack newBook;
             if (letterMeta.getDisplayName().contains("Stationary") || letterMeta.getDisplayName().contains("Stationery")) {
                 newBook = new ItemStack(Material.BOOK_AND_QUILL, 1);
             } else {
@@ -587,28 +587,33 @@ public class RealMail extends JavaPlugin {
                 }
                 /* Stationery Stuff */
                 else if (is.getType() == Material.WRITTEN_BOOK && is.hasItemMeta() && is.getItemMeta().hasLore() && is.getItemMeta().hasDisplayName() && (is.getItemMeta().getDisplayName().contains("§rLetter") || is.getItemMeta().getDisplayName().contains("§rPackage"))) {
-                        if (e.getClickedBlock() != null && e.getClickedBlock().getType().equals(Material.SKULL)) {
+                    if (e.getClickedBlock() != null && e.getClickedBlock().getType().equals(Material.SKULL)) {
 
-                            List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
-                            boolean foundMailbox = false;
-                            players:
-                            for (String p : players) {
-                                List<Location> locations = (List<Location>) mailboxesConfig.getList(e.getPlayer().getUniqueId()+".mailboxes", new LinkedList<Location>());
-                                for (Location loc : locations) {
-                                    if (e.getClickedBlock().getLocation().equals(loc)) {
-                                        org.bukkit.inventory.meta.BookMeta newLetter = (org.bukkit.inventory.meta.BookMeta) is.getItemMeta();
-                                        OfflinePlayer recipient = Bukkit.getOfflinePlayer(newLetter.getTitle());
-                                        if (e.getPlayer().hasPermission("realmail.user.sendmail")) {
+                        List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
+                        
+                        playersLoop:
+                        for (String p : players) {
+                            List<Location> playersMailboxLocations = (List<Location>) mailboxesConfig.getList(p+".mailboxes", new LinkedList<Location>());
+                            for (Location loc : playersMailboxLocations) {
+                                if (e.getClickedBlock().getLocation().equals(loc)) {
+                                    org.bukkit.inventory.meta.BookMeta newLetter = (org.bukkit.inventory.meta.BookMeta) is.getItemMeta();
+                                    OfflinePlayer recipient = Bukkit.getOfflinePlayer(newLetter.getTitle());
+                                    if (e.getPlayer().hasPermission("realmail.user.sendmail")) {
+                                        if (getConfig().getBoolean("universal_mailboxes", false) || (!getConfig().getBoolean("universal_mailboxes", false) && p.equals(e.getPlayer().getUniqueId()+"")) || e.getPlayer().hasPermission("realmail.admin.sendmailAnywhere")) {
                                             ItemStack newLetterItem = new ItemStack(Material.WRITTEN_BOOK);
                                             newLetterItem.setItemMeta(newLetter);
                                             RealMail.this.sendMail(newLetterItem, e.getPlayer(), recipient, true);
                                         } else {
-                                            e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.sendMail", "You do not have permission to send mail."));
+                                            e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.notYourMailbox", "That's not your mailbox. Use /mail to find out how to craft your own."));
                                         }
-                                        break players;
+                                    } else {
+                                        e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.sendMail", "You do not have permission to send mail."));
                                     }
+                                    break playersLoop;
                                 }
                             }
+                        }
+                        
                     }
                 }
             } // End empty hand detection
@@ -678,8 +683,14 @@ public class RealMail extends JavaPlugin {
                             newBM.setDisplayName(newBM.getDisplayName()+" - "+firstPage);
                         }
                     }
-
-                    e.setNewBookMeta(newBM);
+                    
+                    // Check if the recipient exists before signing
+                    if (mailboxesConfig.getList("players", new LinkedList<String>()).contains(Bukkit.getOfflinePlayer(newBM.getTitle()).getUniqueId()+"")) {
+                        e.setNewBookMeta(newBM);
+                    } else { // TODO Make sure to still save the book like when you hit "Done" even when the signing fails
+                        e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.unknownRecipient", "Could not sign. {0} is not a known user on this server.").replaceAll("\\{0}", newBM.getTitle()));
+                        e.setSigning(false);
+                    }
                 }
             }
         }
@@ -925,7 +936,7 @@ public class RealMail extends JavaPlugin {
                     
                     try {
                         mailboxesConfig.save(mailboxesFile);
-                        e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.mailboxPlaces", "Mailbox placed."));
+                        e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.mailboxPlaced", "Mailbox placed."));
                     } catch (Exception ex) {
                         e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.failedToPlaceMailbox", "Failed to place mailbox."));
                         if (getConfig().getBoolean("verbose_errors", false)) {
