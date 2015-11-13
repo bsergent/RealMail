@@ -2,6 +2,15 @@ package com.challengercity.plugins.realmail;
 
 import com.evilmidget38.NameFetcher;
 import com.evilmidget38.UUIDFetcher;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,19 +24,21 @@ import org.bukkit.Bukkit;
  */
 public class OfflineHandler {
     
-    private static final HashMap<UUID, UUID> onlineCache = new HashMap<UUID, UUID>();
-    private static final HashMap<UUID, UUID> localCache = new HashMap<UUID, UUID>();
+    public static final String OFFLINECACHEFILE = RealMail.getPlugin(RealMail.class).getDataFolder()+"/offlineUUIDs.cache";
+    
+    private static HashMap<UUID, UUID> publicCache = new HashMap<UUID, UUID>();
+    private static HashMap<UUID, UUID> localCache = new HashMap<UUID, UUID>();
     
     public static UUID getPublicUUID(UUID localUUID) {
         if (Bukkit.getOnlineMode()) {
             return localUUID;
         } else {
-            if (onlineCache.containsKey(localUUID)) {
-                return onlineCache.get(localUUID);
+            if (publicCache.containsKey(localUUID)) {
+                return publicCache.get(localUUID);
             }
             try {
                 UUID id = UUIDFetcher.getUUIDOf(Bukkit.getOfflinePlayer(localUUID).getName());
-                onlineCache.put(localUUID, id);
+                publicCache.put(localUUID, id);
                 return id;
             } catch (Exception ex) {
                 if (RealMail.getPlugin(RealMail.class).getConfig().getBoolean("verbose_errors", false)) {
@@ -43,7 +54,7 @@ public class OfflineHandler {
             return onlineUUID;
         } else {
             if (localCache.containsKey(onlineUUID)) {
-                return onlineCache.get(onlineUUID);
+                return publicCache.get(onlineUUID);
             }
             Map<UUID, String> result;
             try {
@@ -59,12 +70,46 @@ public class OfflineHandler {
         }
     }
     
-    public static void loadCaches() {
-        // TODO Load and save caches
+    public static void saveCaches() {
+        try {
+            ObjectOutput output = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream(OFFLINECACHEFILE)));
+            try {
+                output.writeObject(publicCache);
+                output.writeObject(localCache);
+                if (RealMail.getPlugin(RealMail.class).getConfig().getBoolean("verbose_errors", false)) {
+                    Bukkit.getLogger().log(Level.INFO, "Saved Offline UUIDs cache.");
+                }
+            } finally {
+                output.close();
+            }
+        } catch (IOException ex) {
+            if (RealMail.getPlugin(RealMail.class).getConfig().getBoolean("verbose_errors", false)) {
+                Bukkit.getLogger().log(Level.INFO, "Failed to save Offline UUIDs cache.");
+            }
+        }
     }
     
-    public static void saveCaches() {
-        
-    }
+    public static void loadCaches() {
+         try {
+            ObjectInput input = new ObjectInputStream(new BufferedInputStream(new FileInputStream(OFFLINECACHEFILE)));
+            try {
+                publicCache = (HashMap<UUID, UUID>) input.readObject();
+                localCache = (HashMap<UUID, UUID>) input.readObject();
+                if (RealMail.getPlugin(RealMail.class).getConfig().getBoolean("verbose_errors", false)) {
+                    Bukkit.getLogger().log(Level.INFO, "Loaded Offline UUIDs cache.");
+                }
+            } finally {
+                input.close();
+            }
+        } catch (ClassNotFoundException ex){
+            if (RealMail.getPlugin(RealMail.class).getConfig().getBoolean("verbose_errors", false)) {
+                Bukkit.getLogger().log(Level.INFO, "Failed to load Offline UUIDs cache. Will create new cache.");
+            }
+        } catch (IOException ex){
+            if (RealMail.getPlugin(RealMail.class).getConfig().getBoolean("verbose_errors", false)) {
+                Bukkit.getLogger().log(Level.INFO, "Failed to load Offline UUIDs cache. Will create new cache.");
+            }
+        }
+    } 
     
 }
