@@ -322,7 +322,7 @@ public class RealMail extends JavaPlugin {
             title = "Mailbox";
             viewer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.openedMailbox", "Opened {0}'s mailbox.").replaceAll("\\{0}", name));
         }
-        Inventory mailInv = Bukkit.createInventory(viewer, getConfig().getInt("mailbox_rows", 4) * 9, title);
+        Inventory mailInv = Bukkit.createInventory(viewer, getConfig().getInt("mailbox_rows", 2) * 9, title);
         List<org.bukkit.inventory.meta.BookMeta> letters = (List<org.bukkit.inventory.meta.BookMeta>) mailboxesConfig.getList(publicUUID+".letters", new LinkedList<org.bukkit.inventory.meta.BookMeta>());
         for (org.bukkit.inventory.meta.BookMeta letterMeta : letters) {
             ItemStack newBook;
@@ -526,10 +526,10 @@ public class RealMail extends JavaPlugin {
                     }
                     
                     // Check if the recipient exists before signing
-                    if (mailboxesConfig.getList("players", new LinkedList<String>()).contains(OfflineHandler.getPublicUUID(UUID.fromString(newBM.getTitle()))+"")) {
+                    if (mailboxesConfig.getList("players", new LinkedList<String>()).contains(OfflineHandler.getPublicUUID(Bukkit.getOfflinePlayer(e.getNewBookMeta().getTitle()).getUniqueId())+"")) {
                         e.setNewBookMeta(newBM);
-                    } else { // TODO Make sure to still save the book like when you hit "Done" even when the signing fails
-                        e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.unknownRecipient", "Could not sign. {0} is not a known user on this server.").replaceAll("\\{0}", newBM.getTitle()));
+                    } else {
+                        e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.unknownRecipient", "Could not sign. {0} is not a known user on this server.").replaceAll("\\{0}", e.getNewBookMeta().getTitle()));
                         e.setSigning(false);
                     }
                 }
@@ -771,7 +771,7 @@ public class RealMail extends JavaPlugin {
                     mailboxesConfig.set(OfflineHandler.getPublicUUID(e.getPlayer().getUniqueId())+".mailboxes", locations);
                     
                     List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
-                    if (!players.contains(OfflineHandler.getPublicUUID(e.getPlayer().getUniqueId()))) {
+                    if (!players.contains(OfflineHandler.getPublicUUID(e.getPlayer().getUniqueId()).toString())) {
                         players.add(OfflineHandler.getPublicUUID(e.getPlayer().getUniqueId())+"");
                     }
                     mailboxesConfig.set("players", players);
