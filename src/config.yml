@@ -57,3 +57,4 @@ let_players_spawn_stationary: false
 lock_mailboxes: true
 prefix: "&f[&6Mail&f]"
 verbose_errors: false
+reusable_feather: true

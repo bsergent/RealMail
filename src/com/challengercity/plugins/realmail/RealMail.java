@@ -828,6 +828,15 @@ public class RealMail extends JavaPlugin {
                 if (!e.getWhoClicked().hasPermission("realmail.user.craft.stationary")) {
                     e.getWhoClicked().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.craftStationary", "You do not have permission to craft stationery."));
                     e.setResult(Event.Result.DENY);
+                } else {
+                    if (getConfig().getBoolean("reusable_feather", true) && e.getResult() == Event.Result.ALLOW || e.getResult() == Event.Result.DEFAULT) {
+                        ItemStack[] cTable = e.getInventory().getMatrix();
+                        for (ItemStack is : cTable) {
+                            if (is != null && is.getData().getItemType() == Material.FEATHER) {
+                                is.setAmount(is.getAmount()+1);
+                            }
+                        }
+                    }
                 }
             } else if (e.getRecipe().getResult().hasItemMeta() && e.getRecipe().getResult().getItemMeta().hasLore() && e.getRecipe().getResult().getItemMeta().getDisplayName().contains(mailboxRecipeMeta.getDisplayName())) { // Mailbox
                 if (!e.getWhoClicked().hasPermission("realmail.user.craft.stationary")) {
