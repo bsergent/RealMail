@@ -124,7 +124,7 @@ public class RealMail extends JavaPlugin {
         }
         languageConfig = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(languageFile);
         
-        if (!Bukkit.getOnlineMode()) {
+        if (RealMail.getPlugin(RealMail.class).getConfig().getBoolean("offline_mode", false)) {
             OfflineHandler.loadCaches();
         }
         
@@ -143,7 +143,7 @@ public class RealMail extends JavaPlugin {
     
     @Override
     public void onDisable() {
-        if (!Bukkit.getOnlineMode()) {
+        if (RealMail.getPlugin(RealMail.class).getConfig().getBoolean("offline_mode", false)) {
             OfflineHandler.saveCaches();
         }
         

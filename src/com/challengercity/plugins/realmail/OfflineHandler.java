@@ -30,7 +30,7 @@ public class OfflineHandler {
     private static HashMap<UUID, UUID> localCache = new HashMap<UUID, UUID>();
     
     public static UUID getPublicUUID(UUID localUUID) {
-        if (Bukkit.getOnlineMode()) {
+        if (!RealMail.getPlugin(RealMail.class).getConfig().getBoolean("offline_mode", false)) {
             return localUUID;
         } else {
             if (publicCache.containsKey(localUUID)) {
@@ -50,7 +50,7 @@ public class OfflineHandler {
     }
     
     public static UUID getLocalUUID(UUID onlineUUID) {
-        if (Bukkit.getOnlineMode()) {
+        if (!RealMail.getPlugin(RealMail.class).getConfig().getBoolean("offline_mode", false)) {
             return onlineUUID;
         } else {
             if (localCache.containsKey(onlineUUID)) {
