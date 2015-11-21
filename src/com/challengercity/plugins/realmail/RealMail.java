@@ -16,6 +16,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -153,7 +154,7 @@ public class RealMail extends JavaPlugin {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         
-        if (cmd.getName().equalsIgnoreCase("realmail")) { // TODO Make the commands more organized when dealing w/ console vs player
+        if (cmd.getName().equalsIgnoreCase("realmail")) { // TODO Separate commands into separate files and then register with Bukkit
             //<editor-fold defaultstate="collapsed" desc="Intruction Commands">
             if (args.length == 0 || (args.length < 2 && args[0].equals("1"))) { // Show crafting
                 sender.sendMessage(new String[] {
@@ -209,6 +210,8 @@ public class RealMail extends JavaPlugin {
             
             if (args.length >= 1 && args[0].equals("version")) {
                 sender.sendMessage(new String[] {ChatColor.GOLD+"RealMail v"+version, "Go to http://dev.bukkit.org/bukkit-plugins/realmail/ for updates."});
+            } else if (args.length >= 1 && args[0].equals("reload")) {
+                Bukkit.getServer().getPluginManager().getPlugin("RealMail").reloadConfig();
             } else {
                 if (!(sender instanceof Player)) {
                     sender.sendMessage(prefix+ChatColor.WHITE+"This command can only be run by a player.");
@@ -283,9 +286,24 @@ public class RealMail extends JavaPlugin {
                             }
                         } else if (args[0].equals("new")) {
                             if (player.hasPermission("realmail.admin.spawn.stationary") || getConfig().getBoolean("let_players_spawn_stationary", false)) {
-                                 giveStationery(player);
+                                giveStationery(player);
                             } else {
                                 player.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.spawnStationary", "You do not have permission to spawn stationery.")); // TODO Start replaces with language compatible here
+                            }
+                        } else if (args[0].equals("clear")) {
+                            UUID publicUUID = OfflineHandler.getPublicUUID(player.getUniqueId());
+                            mailboxesConfig.set(publicUUID+".letters", new LinkedList<BookMeta>());
+                            mailboxesConfig.set(publicUUID+".unread", false);
+                            RealMail.this.udpateMailboxFlags(publicUUID);
+                            try {
+                                mailboxesConfig.save(mailboxesFile);
+                                player.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.clearMail", "You have cleared all letters and packages from your mailbox."));
+                            } catch (Exception ex) {
+                                getLogger().log(Level.INFO, "Failed to clear {0}''s mailbox.", player.getName());
+                                if (getConfig().getBoolean("verbose_errors", false)) {
+                                    ex.printStackTrace();
+                                }
+                                player.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.clearMailFailed", "Your mailbox couldn't be cleared due to an error."));
                             }
                         }
                     }
@@ -373,10 +391,16 @@ public class RealMail extends JavaPlugin {
                 fromPlayer.getInventory().remove(mailItem);
                 if (sendMessages) {
                     fromPlayer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.letterSent", "Letter sent to {0}.").replaceAll("\\{0}", Bukkit.getOfflinePlayer(onlineUUID).getName()));
+                    if (getConfig().getBoolean("enable_sounds", true)) {
+                        fromPlayer.playSound(fromPlayer.getLocation(), Sound.SHOOT_ARROW, 0.8f, 1.2f);
+                    }
                 }
                 udpateMailboxFlags(localUUID);
                 if (Bukkit.getPlayer(localUUID) != null) {
                     Bukkit.getPlayer(localUUID).sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.gotMail", "You've got mail! Check your mailbox. Use /mail to learn how to craft one."));
+                    if (getConfig().getBoolean("enable_sounds", true)) {
+                        Bukkit.getPlayer(localUUID).playSound(Bukkit.getPlayer(localUUID).getLocation(), Sound.ARROW_HIT, 0.8f, 1.2f);
+                    }
                 }
             } catch (Exception ex) {
                 fromPlayer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.failedToSend", "Failed to send the letter."));
@@ -444,6 +468,7 @@ public class RealMail extends JavaPlugin {
                                             ItemStack newLetterItem = new ItemStack(Material.WRITTEN_BOOK);
                                             newLetterItem.setItemMeta(newLetter);
                                             RealMail.this.sendMail(newLetterItem, e.getPlayer(), Bukkit.getOfflinePlayer(newLetter.getTitle()).getUniqueId(), true);
+                                            e.setCancelled(true);
                                         } else {
                                             e.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.notYourMailbox", "That's not your mailbox. Use /mail to find out how to craft your own."));
                                         }
@@ -736,7 +761,7 @@ public class RealMail extends JavaPlugin {
             if (e.getInventory().getName().contains("Mailbox")) {
                 List<BookMeta> letters = new LinkedList<BookMeta>();
                 for (ItemStack is : e.getInventory().getContents()) { // TODO Should do anything about extra letters?
-                    if (is != null && is.hasItemMeta()) {
+                    if (is != null && is.hasItemMeta() && is.getItemMeta() instanceof BookMeta) {
                         letters.add((org.bukkit.inventory.meta.BookMeta) is.getItemMeta());
                     }
                 }

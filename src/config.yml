@@ -46,6 +46,36 @@
 # The time of day in ticks that queued mail will be delivered
 # Set to -1 for instantaneous/express sending of mail
 # Not yet implemented
+#
+# let_players_spawn_stationary: false
+# Gives non-ops access to the /mail new command allowing them to just spawn in stationary
+# instead of needing to craft some
+#
+# lock_mailboxes: true
+# Only allow players to view their own mailboxes to prevent theft from other mailboxes
+#
+# prefix: "&f[&6Mail&f]"
+# Prefix for every message sent by RealMail
+#
+# verbose_errors: false
+# More detailed error logging for debugging and sending in bug reports
+#
+# offline_mode: false
+# This allows servers which do not connect to Mojang's authentication servers to still
+# use this plugin. Enabling this option will query Mojang's servers for each player's
+# UUIDs so that mailbox information may be saved and be safe from future name changes.
+# This will lag the server for a short amount of time (usually 1-2 seconds) each time a
+# new player logs in, but their UUID will then be cached and never retrieved from Mojang
+# again. Servers behind bungee-cord that are configured correctly will not need to enable
+# this option as offical Mojang UUIDs are forwarded to the servers.
+#
+# reusable_feather: true
+# Allows the feather to not be used when crafting stationery. In other words, one piece
+# of paper and one feather will produce one piece of stationery and the same feather. This
+# works similar to how filled buckets work when included in a crafting recipe.
+#
+# enable_sounds: true
+# A ding will play when a player receives mail and when a player successfully sends mail.
 dateformat: MM/dd/yy hh:mma zzz
 universal_mailboxes: false
 enable_attachments: true
@@ -59,3 +89,4 @@ prefix: "&f[&6Mail&f]"
 verbose_errors: false
 offline_mode: false
 reusable_feather: true
+enable_sounds: true

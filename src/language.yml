@@ -37,3 +37,5 @@ mail:
   failedToRemoveMailbox: "Failed to remove mailbox."
   openedMailbox: "Opened {0}'s mailbox."
   unknownRecipient: "Could not sign. {0} is not a known user on this server."
+  clearMail: "You have cleared all letters and packages from your mailbox."
+  clearMailFailed: "Your mailbox couldn't be cleared due to an error."
