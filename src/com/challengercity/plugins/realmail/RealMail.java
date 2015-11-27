@@ -235,9 +235,46 @@ public class RealMail extends JavaPlugin {
                             if (player.hasPermission("realmail.admin.bulkmail")) {
                                 ItemStack itemHand = player.getItemInHand();
                                 if (itemHand.getType() == Material.WRITTEN_BOOK && itemHand.hasItemMeta() && itemHand.getItemMeta().hasDisplayName() && (itemHand.getItemMeta().getDisplayName().contains("Letter") || itemHand.getItemMeta().getDisplayName().contains("Package"))) {
+                                    String originalCode = "";
+                                    
+                                    // Loop through all known players
                                     List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
                                     for (String p : players) {
+                                        
+                                        // If it's a package
+                                        if (itemHand.getItemMeta().getDisplayName().contains("Package") && itemHand.getItemMeta().hasLore()) {
+                                            String newCode = UUID.randomUUID().toString();
+                                            List<ItemStack> attachments = new LinkedList<ItemStack>();
+                                            ItemMeta im = itemHand.getItemMeta();
+                                            List<String> lore = im.getLore();
+                                            
+                                            // Find the original package code, get the original attachments, and set the lore and attachments to the new code
+                                            for (int i = 0; i < lore.size(); i++) {
+                                                if (lore.get(i).contains("ID")) {
+                                                    originalCode = lore.get(i).replace("§r§7ID: ", "");
+                                                    attachments = (List<ItemStack>) packagesConfig.getList(originalCode, new LinkedList<ItemStack>());
+                                                    lore.set(i, "§r§7ID: " + newCode);
+                                                    break;
+                                                }
+                                            }
+                                            im.setLore(lore);
+                                            itemHand.setItemMeta(im);
+                                            packagesConfig.set(newCode, attachments);
+                                        }
+                                        // Send the letter
                                         sendMail(itemHand, player, OfflineHandler.getLocalUUID(UUID.fromString(p)), false);
+                                    }
+                                    
+                                    // After looping through the players, get rid of the original attachment code and save the new ones
+                                    if (itemHand.getItemMeta().getDisplayName().contains("Package") && itemHand.getItemMeta().hasLore()) {
+                                        packagesConfig.set(originalCode, null);
+                                        try {
+                                            packagesConfig.save(packagesFile);
+                                        } catch (Exception ex) {
+                                            if (getConfig().getBoolean("verbose_errors", false)) {
+                                                Bukkit.getLogger().log(Level.INFO, "Failed to save newly generated package UUIDs.");
+                                            }
+                                        }
                                     }
                                     sender.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.bulkSent", "Letter sent to all players on the server."));
                                 } else {
