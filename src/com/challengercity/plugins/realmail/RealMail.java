@@ -43,7 +43,7 @@ public class RealMail extends JavaPlugin {
 
     // TODO Add letter delivery queue to deliver at a specific time option
     
-    private final String version = "0.3.2";
+    private final String version = "0.3.2.16";
     private org.bukkit.configuration.file.FileConfiguration mailboxesConfig = null;
     private java.io.File mailboxesFile = null;
     private org.bukkit.configuration.file.FileConfiguration packagesConfig = null;
@@ -75,7 +75,8 @@ public class RealMail extends JavaPlugin {
         mailboxRecipeMeta.setLore(Arrays.asList("§r§7Right-click with this coupon","§r§7to get a mailbox"));
         blueMailboxCoupon.setItemMeta(mailboxRecipeMeta);
         ShapedRecipe blueMailboxRecipe = new ShapedRecipe(blueMailboxCoupon);
-        blueMailboxRecipe.shape("  w", "iii", "ici");
+        blueMailboxRecipe.shape("g w", "iii", "ici");
+        blueMailboxRecipe.setIngredient('g', org.bukkit.Material.GOLD_NUGGET);
         blueMailboxRecipe.setIngredient('w', org.bukkit.Material.WOOL, -1);
         blueMailboxRecipe.setIngredient('i', org.bukkit.Material.IRON_INGOT);
         blueMailboxRecipe.setIngredient('c', org.bukkit.Material.CHEST);
@@ -90,6 +91,7 @@ public class RealMail extends JavaPlugin {
         ShapelessRecipe stationeryRecipe = new ShapelessRecipe(stationery);
         stationeryRecipe.addIngredient(Material.PAPER);
         stationeryRecipe.addIngredient(Material.FEATHER);
+        stationeryRecipe.addIngredient(Material.GOLD_NUGGET);
         this.getServer().addRecipe(stationeryRecipe);
         
         if (getConfig().getString("prefix") != null) {
@@ -157,11 +159,11 @@ public class RealMail extends JavaPlugin {
                 sender.sendMessage(new String[] {
                     ChatColor.GOLD+""+ChatColor.BOLD+"RealMail - Crafting Recipes",
                     ChatColor.GOLD+"Mailbox:",
-                    ChatColor.DARK_GRAY+"  --"+ChatColor.WHITE+"w   w"+ChatColor.WHITE+" = wool (1x)",
+                    ChatColor.GOLD+"  g"+ChatColor.DARK_GRAY+"-"+ChatColor.WHITE+"w   w"+ChatColor.WHITE+" = wool (1x)",
                     ChatColor.GRAY+"  i i i   i"+ChatColor.WHITE+" = iron ingot (5x)",
                     ChatColor.GRAY+"  i "+ChatColor.DARK_RED+"c"+ChatColor.GRAY+"i   "+ChatColor.DARK_RED+"c"+ChatColor.WHITE+" = chest (1x)",
                     ChatColor.GOLD+"Stationery:",
-                    ChatColor.WHITE+"  1x paper and 1x feather",
+                    ChatColor.WHITE+"  1x paper, 1x feather, and 1x gold nugget",
                     ChatColor.WHITE+"Use /mail 2 for usage"
                 });
             } else if (args.length < 2) {
