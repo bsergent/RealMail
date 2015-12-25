@@ -1,11 +1,11 @@
 name: RealMail
 description: Send mail to physical mailboxes without commands
-version: 0.3.2
+version: 0.3.2d9.1
 author: Ben Sergent V
 
 main: com.challengercity.plugins.realmail.RealMail
 database: false
-#depend: [WorldEdit]
+softdepend: [Multiverse-Core]
 
 permissions:
   realmail.user.*:

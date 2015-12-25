@@ -43,7 +43,7 @@ public class RealMail extends JavaPlugin {
 
     // TODO Add letter delivery queue to deliver at a specific time option
     
-    private final String version = "0.3.2";
+    private final String version = "0.3.2d9.1";
     private org.bukkit.configuration.file.FileConfiguration mailboxesConfig = null;
     private java.io.File mailboxesFile = null;
     private org.bukkit.configuration.file.FileConfiguration packagesConfig = null;
