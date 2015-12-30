@@ -988,7 +988,7 @@ public class RealMail extends JavaPlugin {
                     e.setResult(Event.Result.DENY);
                 }
             } else if (e.getRecipe().getResult().hasItemMeta() && e.getRecipe().getResult().getItemMeta().hasLore() && e.getRecipe().getResult().getItemMeta().getDisplayName().contains(mailboxRecipeMeta.getDisplayName())) { // Mailbox
-                if (!e.getWhoClicked().hasPermission("realmail.user.craft.stationary")) {
+                if (!e.getWhoClicked().hasPermission("realmail.user.craft.mailbox")) {
                     e.getWhoClicked().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("noperm.craftMailbox", "You do not have permission to craft a mailbox."));
                     e.setResult(Event.Result.DENY);
                 }
