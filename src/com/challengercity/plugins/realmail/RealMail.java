@@ -372,7 +372,7 @@ public class RealMail extends JavaPlugin {
                 if (sendMessages) {
                     fromPlayer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.letterSent", "Letter sent to {0}.").replaceAll("\\{0}", toPlayer.getName()));
                 }
-                udpateMailboxFlags(toPlayer.getPlayer());
+                updateMailboxFlags(toPlayer.getPlayer());
                 if (toPlayer.getPlayer() != null) {
                     toPlayer.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.gotMail", "You've got mail! Check your mailbox. Use /mail to learn how to craft one."));
                 }
@@ -424,7 +424,7 @@ public class RealMail extends JavaPlugin {
                 if (sendMessages) {
                     fromPlayer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.letterSent", "Letter sent to {0}.").replaceAll("\\{0}", Bukkit.getOfflinePlayer(toUUID).getName()));
                 }
-                udpateMailboxFlags(Bukkit.getOfflinePlayer(toUUID));
+                updateMailboxFlags(Bukkit.getOfflinePlayer(toUUID));
                 if (Bukkit.getPlayer(toUUID) != null) {
                     Bukkit.getPlayer(toUUID).sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.gotMail", "You've got mail! Check your mailbox. Use /mail to learn how to craft one."));
                 }
@@ -445,7 +445,7 @@ public class RealMail extends JavaPlugin {
         return true;
     }
     
-    public boolean udpateMailboxFlags(OfflinePlayer owner) {
+    public boolean updateMailboxFlags(OfflinePlayer owner) {
         return true;
     }
     
@@ -903,7 +903,7 @@ public class RealMail extends JavaPlugin {
                 ownerName = ownerName.replace("'s Mailbox", "");
                 mailboxesConfig.set(Bukkit.getOfflinePlayer(ownerName).getUniqueId()+".letters", letters);
                 mailboxesConfig.set(Bukkit.getOfflinePlayer(ownerName).getUniqueId()+".unread", false);
-                RealMail.this.udpateMailboxFlags(Bukkit.getOfflinePlayer(ownerName));
+                RealMail.this.updateMailboxFlags(Bukkit.getOfflinePlayer(ownerName));
                 try {
                     mailboxesConfig.save(mailboxesFile);
                 } catch (Exception ex) {
