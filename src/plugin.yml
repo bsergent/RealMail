@@ -6,6 +6,7 @@ website: http://dev.bukkit.org/bukkit-plugins/realmail/
 
 main: com.challengercity.plugins.realmail.RealMail
 database: false
+softdepend: [Multiverse-Core]
 
 permissions:
   realmail.user.*:

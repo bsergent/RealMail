@@ -331,7 +331,7 @@ public class RealMail extends JavaPlugin {
                             UUID publicUUID = OfflineHandler.getPublicUUID(player.getUniqueId());
                             mailboxesConfig.set(publicUUID+".letters", new LinkedList<BookMeta>());
                             mailboxesConfig.set(publicUUID+".unread", false);
-                            RealMail.this.udpateMailboxFlags(publicUUID);
+                            RealMail.this.updateMailboxFlags(publicUUID);
                             try {
                                 mailboxesConfig.save(mailboxesFile);
                                 player.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.clearMail", "You have cleared all letters and packages from your mailbox."));
@@ -429,14 +429,25 @@ public class RealMail extends JavaPlugin {
                 if (sendMessages) {
                     fromPlayer.sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.letterSent", "Letter sent to {0}.").replaceAll("\\{0}", Bukkit.getOfflinePlayer(onlineUUID).getName()));
                     if (getConfig().getBoolean("enable_sounds", true)) {
-                        fromPlayer.playSound(fromPlayer.getLocation(), Sound.SHOOT_ARROW, 0.8f, 1.2f);
+                        fromPlayer.playSound(fromPlayer.getLocation(), Sound.ENTITY_ARROW_SHOOT, 0.8f, 1.2f);
                     }
                 }
-                udpateMailboxFlags(localUUID);
+                updateMailboxFlags(localUUID);
                 if (Bukkit.getPlayer(localUUID) != null) {
                     Bukkit.getPlayer(localUUID).sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.gotMail", "You've got mail! Check your mailbox. Use /mail to learn how to craft one."));
                     if (getConfig().getBoolean("enable_sounds", true)) {
-                        Bukkit.getPlayer(localUUID).playSound(Bukkit.getPlayer(localUUID).getLocation(), Sound.ARROW_HIT, 0.8f, 1.2f);
+                        Bukkit.getPlayer(localUUID).playSound(Bukkit.getPlayer(localUUID).getLocation(), Sound.ENTITY_ARROW_HIT_PLAYER, 0.8f, 1.2f);
+                        Bukkit.getScheduler().runTaskLater(this, new Runnable() {
+                            private UUID playerID;
+                            @Override
+                            public void run() {
+                                Bukkit.getPlayer(playerID).playSound(Bukkit.getPlayer(playerID).getLocation(), Sound.ENTITY_ARROW_HIT_PLAYER, 0.8f, 1.4f);
+                            }
+                            private Runnable init(UUID id) {
+                                playerID = id;
+                                return this;
+                            }
+                        }.init(localUUID), 10);
                     }
                 }
             } catch (Exception ex) {
@@ -456,7 +467,7 @@ public class RealMail extends JavaPlugin {
         return true;
     }
     
-    public boolean udpateMailboxFlags(UUID localUUID) {
+    public boolean updateMailboxFlags(UUID localUUID) {
         return true;
     }
     
@@ -807,7 +818,7 @@ public class RealMail extends JavaPlugin {
                 UUID publicUUID = OfflineHandler.getPublicUUID(Bukkit.getOfflinePlayer(ownerName).getUniqueId());
                 mailboxesConfig.set(publicUUID+".letters", letters);
                 mailboxesConfig.set(publicUUID+".unread", false);
-                RealMail.this.udpateMailboxFlags(Bukkit.getOfflinePlayer(ownerName).getUniqueId());
+                RealMail.this.updateMailboxFlags(Bukkit.getOfflinePlayer(ownerName).getUniqueId());
                 try {
                     mailboxesConfig.save(mailboxesFile);
                 } catch (Exception ex) {
@@ -950,6 +961,20 @@ public class RealMail extends JavaPlugin {
         @Override
         public void run() {
            event.getPlayer().sendMessage(prefix+ChatColor.WHITE+languageConfig.getString("mail.gotMailLogin", "You've got mail! Check your mailbox."));
+           if (getConfig().getBoolean("enable_sounds", true)) {
+                event.getPlayer().playSound(event.getPlayer().getLocation(), Sound.ENTITY_ARROW_HIT_PLAYER, 0.8f, 1.2f);
+                Bukkit.getScheduler().runTaskLater(RealMail.this, new Runnable() {
+                    private Player player;
+                    @Override
+                    public void run() {
+                        player.playSound(player.getLocation(), Sound.ENTITY_ARROW_HIT_PLAYER, 0.8f, 1.4f);
+                    }
+                    private Runnable init(Player ply) {
+                        player = ply;
+                        return this;
+                    }
+                }.init(event.getPlayer()), 10);
+            }
         }
         
     }
