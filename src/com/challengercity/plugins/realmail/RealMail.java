@@ -139,7 +139,7 @@ public class RealMail extends JavaPlugin {
 
 		getServer().getPluginManager().registerEvents(new MailListener(), this);
 		getServer().getPluginManager().registerEvents(new LoginListener(), this);
-		//this.getCommand("realmail").setTabCompleter(new MailTabCompleter());
+		this.getCommand("realmail").setTabCompleter(new MailTabCompleter());
 
 		getLogger().log(Level.INFO, "RealMail v{0} enabled.", version);
 	}
@@ -305,9 +305,6 @@ public class RealMail extends JavaPlugin {
 					} else if (args[0].equals("open")) {
 						if (args.length >= 2) {
 							if (player.hasPermission("realmail.admin.openMailboxAnywhere.others")) {
-								player.sendMessage(args[1].toString());
-								player.sendMessage(Bukkit.getOfflinePlayer(args[1]).getUniqueId().toString());
-								player.sendMessage(OfflineHandler.getPublicUUID(Bukkit.getOfflinePlayer(args[1]).getUniqueId()).toString());
 								if (!mailboxesConfig.getList(OfflineHandler.getPublicUUID(Bukkit.getOfflinePlayer(args[1]).getUniqueId()) + ".letters", new LinkedList<String>()).isEmpty()) {
 									openMailbox(Bukkit.getOfflinePlayer(args[1]).getUniqueId(), player);
 								} else {
@@ -388,9 +385,7 @@ public class RealMail extends JavaPlugin {
 		sb.append("\",Properties:{textures:[{Value:\"");
 		sb.append(base64);
 		sb.append("\"}]}}} 1");
-		Bukkit.getLogger().log(Level.WARNING, sb.toString());
 		getServer().dispatchCommand(getServer().getConsoleSender(), sb.toString());
-		//getServer().dispatchCommand(getServer().getConsoleSender(), "minecraft:give " + ply.getName() + " minecraft:player_head 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\"" + mailboxIdBlue + "\",Name:\"ha1fBit\",Properties:{textures:[{Value:\"" + mailboxTextureBlue + "\"}]}}}");
 	}
 
 	public void giveStationery(Player ply) {
