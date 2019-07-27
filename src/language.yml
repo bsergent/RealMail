@@ -13,7 +13,7 @@ noperm:
   attachments: "You do not have permission to attach items."
   seeAdminHelp: "You do not have permission to see the admin commands."
 mail:
-  onlyLettersAndPackages: "You may only send letters and packages."
+  onlyLettersAndPackages: "You may only send signed letters and packages."
   bulkSent: "Letter sent to all players on the server."
   doesntHaveMailbox: "{0} does not have a mailbox."
   notAllShown: "Not all letters could be shown. Please empty your mailbox."
@@ -36,6 +36,6 @@ mail:
   failedToPlaceMailbox: "Failed to place mailbox."
   failedToRemoveMailbox: "Failed to remove mailbox."
   openedMailbox: "Opened {0}'s mailbox."
-  unknownRecipient: "Could not sign. {0} is not a known user on this server."
+  unknownRecipient: "Could not sign. {0} is not a known player on this server."
   clearMail: "You have cleared all letters and packages from your mailbox."
   clearMailFailed: "Your mailbox couldn't be cleared due to an error."

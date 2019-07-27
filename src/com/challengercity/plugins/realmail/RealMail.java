@@ -157,7 +157,7 @@ public class RealMail extends JavaPlugin {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
 		if (cmd.getName().equalsIgnoreCase("realmail")) { // TODO Separate commands into separate files and then register with Bukkit
-//<editor-fold defaultstate="collapsed" desc="Intruction Commands">
+			//<editor-fold defaultstate="collapsed" desc="Intruction Commands">
 			if (args.length == 0 || (args.length < 2 && args[0].equals("1"))) { // Show crafting
 				sender.sendMessage(new String[]{
 					ChatColor.GOLD + "" + ChatColor.BOLD + "RealMail - Crafting Recipes",
@@ -217,7 +217,7 @@ public class RealMail extends JavaPlugin {
 			} else if (!(sender instanceof Player)) {
 				sender.sendMessage(prefix + ChatColor.WHITE + "This command can only be run by a player.");
 			} else {
-//<editor-fold defaultstate="collapsed" desc="NonConsole Commands">
+				//<editor-fold defaultstate="collapsed" desc="Player-only Commands">
 				Player player = (Player) sender;
 				if (args.length >= 1) {
 					if (args[0].equals("send")) {
@@ -235,38 +235,54 @@ public class RealMail extends JavaPlugin {
 					} else if (args[0].equals("bulksend")) {
 						if (player.hasPermission("realmail.admin.bulkmail")) {
 							ItemStack itemHand = player.getItemInHand();
+							// If valid letter/package
 							if (itemHand.getType() == Material.WRITTEN_BOOK && itemHand.hasItemMeta() && itemHand.getItemMeta().hasDisplayName() && (itemHand.getItemMeta().getDisplayName().contains("Letter") || itemHand.getItemMeta().getDisplayName().contains("Package"))) {
+								
+								// Check if the item is a package
+								boolean isPackage = itemHand.getItemMeta().getDisplayName().contains("Package") && itemHand.getItemMeta().hasLore();
 								String originalCode = "";
-
-// Loop through all known players
-								List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
-								for (String p : players) {
-
-// If it's a package
-									if (itemHand.getItemMeta().getDisplayName().contains("Package") && itemHand.getItemMeta().hasLore()) {
-										String newCode = UUID.randomUUID().toString();
-										List<ItemStack> attachments = new LinkedList<ItemStack>();
-										ItemMeta im = itemHand.getItemMeta();
-										List<String> lore = im.getLore();
-
-// Find the original package code, get the original attachments, and set the lore and attachments to the new code
-										for (int i = 0; i < lore.size(); i++) {
-											if (lore.get(i).contains("ID")) {
-												originalCode = lore.get(i).replace("§r§7ID: ", "");
-												attachments = (List<ItemStack>) packagesConfig.getList(originalCode, new LinkedList<ItemStack>());
-												lore.set(i, "§r§7ID: " + newCode);
-												break;
-											}
-										}
-										im.setLore(lore);
-										itemHand.setItemMeta(im);
-										packagesConfig.set(newCode, attachments);
-									}
-// Send the letter
-									sendMail(itemHand, player, OfflineHandler.getLocalUUID(UUID.fromString(p)), false);
+								List<ItemStack> attachments = new LinkedList();
+								if (isPackage) {
+									// Get original code
+									for (String l : itemHand.getItemMeta().getLore())
+										if (l.contains("ID"))
+											originalCode = l.replace("§r§7ID: ", "");
+									
+									// Get original attachments
+									attachments = (List<ItemStack>) packagesConfig.getList(originalCode, new LinkedList());
 								}
 
-// After looping through the players, get rid of the original attachment code and save the new ones
+								// Loop through all known players
+								List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList());
+								for (String p : players) {
+									
+									// Update lore and packages config if package
+									if (isPackage) {
+										String newCode = generatePackageCode();
+										
+										// Update lore with new code
+										ItemMeta im = itemHand.getItemMeta();
+										List<String> lore = im.getLore();
+										for (int l = 0; l < lore.size(); l++)
+											if (lore.get(l).contains("ID"))
+												lore.set(l, "§r§7ID: " + newCode);
+										im.setLore(lore);
+										itemHand.setItemMeta(im);
+										
+										// Duplicate attachments
+										List<ItemStack> newAttachments = new LinkedList();
+										for (ItemStack a : attachments)
+											newAttachments.add(a.clone());
+										
+										// Add new entry to packages config
+										packagesConfig.set(newCode, newAttachments);
+									}
+									
+									// Send letter/package
+									sendMail(itemHand, player, OfflineHandler.getLocalUUID(UUID.fromString(p)), false, true);
+								}
+
+								// After looping through the players, get rid of the original attachment code and save the new ones
 								if (itemHand.getItemMeta().getDisplayName().contains("Package") && itemHand.getItemMeta().hasLore()) {
 									packagesConfig.set(originalCode, null);
 									try {
@@ -279,7 +295,7 @@ public class RealMail extends JavaPlugin {
 								}
 								sender.sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.bulkSent", "Letter sent to all players on the server."));
 							} else {
-								sender.sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.onlyLettersAndPackages", "You may only send letters and packages."));
+								sender.sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.onlyLettersAndPackages", "You may only send signed letters and packages."));
 							}
 						} else {
 							player.sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("noperm.bulkSend", "You do not have permission to mail players in bulk."));
@@ -429,12 +445,17 @@ public class RealMail extends JavaPlugin {
 	}
 
 	public boolean sendMail(ItemStack mailItem, Player fromPlayer, UUID localUUID, boolean sendMessages) {
+		return sendMail(mailItem, fromPlayer, localUUID, sendMessages, false);
+	}
+	public boolean sendMail(ItemStack mailItem, Player fromPlayer, UUID localUUID, boolean sendMessages, boolean bulkMail) {
 		UUID onlineUUID = OfflineHandler.getPublicUUID(localUUID);
 		if (mailItem.getType() != Material.WRITTEN_BOOK) {
 			return false;
 		}
 		BookMeta mailMeta = (BookMeta) mailItem.getItemMeta();
-		if (mailboxesConfig.getList(onlineUUID + ".letters", new LinkedList<ItemStack>()).size() < (getConfig().getInt("mailbox_rows", 4) * 9)) {
+		if (bulkMail)
+			mailMeta.setTitle("Everyone");
+		if (mailboxesConfig.getList(onlineUUID + ".letters", new LinkedList()).size() < (getConfig().getInt("mailbox_rows", 4) * 9)) {
 			java.util.Date dateRaw = java.util.Calendar.getInstance().getTime();
 			java.text.SimpleDateFormat format = new java.text.SimpleDateFormat();
 			format.applyPattern(getConfig().getString("dateformat"));
@@ -450,7 +471,7 @@ public class RealMail extends JavaPlugin {
 			}
 			mailMeta.setLore(lore);
 
-			List<org.bukkit.inventory.meta.BookMeta> letters = (List<org.bukkit.inventory.meta.BookMeta>) mailboxesConfig.getList(onlineUUID + ".letters", new LinkedList<org.bukkit.inventory.meta.BookMeta>());
+			List<org.bukkit.inventory.meta.BookMeta> letters = (List<org.bukkit.inventory.meta.BookMeta>) mailboxesConfig.getList(onlineUUID + ".letters", new LinkedList());
 			letters.add(mailMeta);
 			mailboxesConfig.set(onlineUUID + ".letters", letters);
 			mailboxesConfig.set(onlineUUID + ".unread", true);
@@ -502,6 +523,18 @@ public class RealMail extends JavaPlugin {
 
 	public boolean updateMailboxFlags(UUID localUUID) {
 		return true;
+	}
+	
+	/**
+	 * Generate a new package code guaranteed to not conflict with an existing code
+	 * @return 8 character UUID substring
+	 */
+	public String generatePackageCode() {
+		String code;
+		do
+			code = UUID.randomUUID().toString().substring(0, 8);
+		while (packagesConfig.contains(code));
+		return code;
 	}
 
 	public final class MailListener implements org.bukkit.event.Listener {
@@ -593,7 +626,7 @@ public class RealMail extends JavaPlugin {
 			}
 		}
 
-//<editor-fold defaultstate="collapsed" desc="Signing Letters">
+		//<editor-fold defaultstate="collapsed" desc="Signing Letters">
 		@org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.NORMAL)
 		public void onEditBook(org.bukkit.event.player.PlayerEditBookEvent e) {
 			if (e.getPreviousBookMeta() != null && e.getPreviousBookMeta().hasDisplayName() && (e.getPreviousBookMeta().getDisplayName().contains("Stationary") || e.getPreviousBookMeta().getDisplayName().contains("Stationery") || e.getPreviousBookMeta().getDisplayName().contains("Package"))) {
@@ -632,7 +665,7 @@ public class RealMail extends JavaPlugin {
 					if (mailboxesConfig.getList("players", new LinkedList<String>()).contains(OfflineHandler.getPublicUUID(Bukkit.getOfflinePlayer(e.getNewBookMeta().getTitle()).getUniqueId()) + "")) {
 						e.setNewBookMeta(newBM);
 					} else {
-						e.getPlayer().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.unknownRecipient", "Could not sign. {0} is not a known user on this server.").replaceAll("\\{0}", e.getNewBookMeta().getTitle()));
+						e.getPlayer().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.unknownRecipient", "Could not sign. {0} is not a known player on this server.").replaceAll("\\{0}", e.getNewBookMeta().getTitle()));
 						e.setSigning(false);
 					}
 				}
@@ -642,7 +675,7 @@ public class RealMail extends JavaPlugin {
 
 		@org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.NORMAL)
 		public void onInventoryClick(org.bukkit.event.inventory.InventoryClickEvent e) {
-//<editor-fold defaultstate="collapsed" desc="Only letters and attachments in mailboxes and no villagers">
+			//<editor-fold defaultstate="collapsed" desc="Only letters and attachments in mailboxes and no villagers">
 			if (e.getView().getTitle().contains("Mailbox")) {
 				ItemStack cursor = e.getCursor();
 				ItemStack current = e.getCurrentItem();
@@ -698,7 +731,7 @@ public class RealMail extends JavaPlugin {
 			}
 //</editor-fold>
 
-//<editor-fold defaultstate="collapsed" desc="Attach items">
+			//<editor-fold defaultstate="collapsed" desc="Attach items">
 			if (e.isLeftClick()) { // TODO Fix all these creative bugs
 				ItemStack current = e.getCurrentItem();
 				ItemStack cursor = e.getCursor();
@@ -726,7 +759,7 @@ public class RealMail extends JavaPlugin {
 										}
 										if (attachments.size() < getConfig().getInt("max_attachments", 4) || e.getWhoClicked().hasPermission("realmail.admin.bypassAttachmentLimits")) {
 											if (code.equals("")) {
-												code = UUID.randomUUID().toString();
+												code = generatePackageCode();
 												List<String> lore = im.getLore();
 
 												boolean hasDetachInstr = false;
@@ -775,7 +808,7 @@ public class RealMail extends JavaPlugin {
 			}
 //</editor-fold>
 
-//<editor-fold defaultstate="collapsed" desc="Detach items">
+			//<editor-fold defaultstate="collapsed" desc="Detach items">
 			if ((e.isRightClick() || e.getClick() == ClickType.CREATIVE) && e.getCursor() != null && e.getCursor().getType() != Material.AIR && (e.getCurrentItem() == null || e.getCurrentItem().getType() == Material.AIR)) {
 				if (e.getCursor().getType() == Material.WRITTEN_BOOK || e.getCursor().getType() == Material.WRITABLE_BOOK) {
 					if (e.getCursor().hasItemMeta() && e.getCursor().getItemMeta().hasDisplayName() && e.getCursor().getItemMeta().getDisplayName().contains("Package") && e.getCursor().getItemMeta().hasLore()) {
@@ -784,10 +817,12 @@ public class RealMail extends JavaPlugin {
 								String code = loreLine.replace("§r§7ID: ", "");
 								if (packagesConfig.contains(code)) {
 
-									List<ItemStack> attachments = (List<ItemStack>) packagesConfig.getList(code, new LinkedList<ItemStack>());
-
-									e.setCurrentItem(attachments.get(0));
-									attachments.remove(0);
+									List<ItemStack> attachments = (List<ItemStack>) packagesConfig.getList(code, new LinkedList());
+									
+									if (attachments.size() > 0) {
+										e.setCurrentItem(attachments.get(0));
+										attachments.remove(0);
+									}
 
 									if (attachments.size() <= 0) {
 										ItemMeta im = e.getCursor().getItemMeta();
@@ -810,9 +845,8 @@ public class RealMail extends JavaPlugin {
 										e.setResult(Event.Result.DENY);
 									} catch (Exception ex) {
 										e.getWhoClicked().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.couldNotDetach", "Could not detach item."));
-										if (getConfig().getBoolean("verbose_errors", false)) {
+										if (getConfig().getBoolean("verbose_errors", false))
 											ex.printStackTrace();
-										}
 									}
 
 								} else {
@@ -827,7 +861,7 @@ public class RealMail extends JavaPlugin {
 //</editor-fold>
 		}
 
-//<editor-fold defaultstate="collapsed" desc="Save mailbox on close">
+		//<editor-fold defaultstate="collapsed" desc="Save mailbox on close">
 		@org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.NORMAL)
 		public void onInventoryClose(org.bukkit.event.inventory.InventoryCloseEvent e) {
 			if (e.getView().getTitle().contains("Mailbox")) {
@@ -853,9 +887,9 @@ public class RealMail extends JavaPlugin {
 				}
 			}
 		}
-//</editor-fold>
+		//</editor-fold>
 
-//<editor-fold defaultstate="collapsed" desc="Detect mailbox placing">
+		//<editor-fold defaultstate="collapsed" desc="Detect mailbox placing">
 		@org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.NORMAL)
 		public void onBlockPlace(org.bukkit.event.block.BlockPlaceEvent e) {
 			if (e.getItemInHand() != null) {
@@ -886,9 +920,9 @@ public class RealMail extends JavaPlugin {
 
 			}
 		}
-//</editor-fold>
+		//</editor-fold>
 
-//<editor-fold defaultstate="collapsed" desc="Detect mailbox breaking">
+		//<editor-fold defaultstate="collapsed" desc="Detect mailbox breaking">
 		@org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.NORMAL)
 		public void onBlockBreak(org.bukkit.event.block.BlockBreakEvent e) {
 			List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
@@ -916,9 +950,9 @@ public class RealMail extends JavaPlugin {
 				}
 			}
 		}
-//</editor-fold>
+		//</editor-fold>
 
-//<editor-fold defaultstate="collapsed" desc="Crafting">
+		//<editor-fold defaultstate="collapsed" desc="Crafting">
 		@org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.NORMAL)
 		public void onCraft(org.bukkit.event.inventory.CraftItemEvent e) {
 			if (e.getRecipe().getResult().hasItemMeta() && e.getRecipe().getResult().getItemMeta().hasLore() && e.getRecipe().getResult().getItemMeta().getDisplayName().contains(stationeryMeta.getDisplayName())) { // Stationery
@@ -940,10 +974,10 @@ public class RealMail extends JavaPlugin {
 				}
 			}
 		}
-//</editor-fold>
+		//</editor-fold>
 	}
 
-//<editor-fold defaultstate="collapsed" desc="Login notifications">
+	//<editor-fold defaultstate="collapsed" desc="Login notifications">
 	public final class LoginListener implements org.bukkit.event.Listener {
 
 		@org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
@@ -972,7 +1006,7 @@ public class RealMail extends JavaPlugin {
 	}
 //</editor-fold>
 
-//<editor-fold defaultstate="collapsed" desc="Login runnable">
+	//<editor-fold defaultstate="collapsed" desc="Login runnable">
 	public final class LoginRunnable implements Runnable {
 
 		private org.bukkit.event.player.PlayerJoinEvent event;
