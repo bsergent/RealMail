@@ -1,4 +1,4 @@
-package com.challengercity.plugins.realmail;
+package us.hexfrost.realmail;
 
 import com.evilmidget38.NameFetcher;
 import com.evilmidget38.UUIDFetcher;

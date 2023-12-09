@@ -1,4 +1,4 @@
-package com.challengercity.plugins.realmail;
+package us.hexfrost.realmail;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -130,12 +130,7 @@ public class RealMail extends JavaPlugin {
 			OfflineHandler.loadCaches();
 		}
 
-		try {
-			org.mcstats.MetricsLite metrics = new org.mcstats.MetricsLite(this);
-			metrics.start();
-		} catch (IOException e) {
-			// Failed to submit the stats :-(
-		}
+		// TODO Send analytics here
 
 		getServer().getPluginManager().registerEvents(new MailListener(), this);
 		getServer().getPluginManager().registerEvents(new LoginListener(), this);
@@ -976,8 +971,7 @@ public class RealMail extends JavaPlugin {
 		}
 		//</editor-fold>
 	}
-
-	//<editor-fold defaultstate="collapsed" desc="Login notifications">
+	
 	public final class LoginListener implements org.bukkit.event.Listener {
 
 		@org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.MONITOR)
@@ -1004,9 +998,7 @@ public class RealMail extends JavaPlugin {
 			}
 		}
 	}
-//</editor-fold>
 
-	//<editor-fold defaultstate="collapsed" desc="Login runnable">
 	public final class LoginRunnable implements Runnable {
 
 		private org.bukkit.event.player.PlayerJoinEvent event;
@@ -1037,6 +1029,5 @@ public class RealMail extends JavaPlugin {
 		}
 
 	}
-//</editor-fold>
 
 }

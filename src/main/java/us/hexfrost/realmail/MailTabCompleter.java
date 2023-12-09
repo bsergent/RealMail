@@ -1,6 +1,6 @@
-package com.challengercity.plugins.realmail;
+package us.hexfrost.realmail;
 
-import com.mysql.jdbc.StringUtils;
+import com.mysql.cj.util.StringUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
