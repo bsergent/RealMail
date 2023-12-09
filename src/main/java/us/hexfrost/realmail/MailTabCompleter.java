@@ -20,7 +20,7 @@ public class MailTabCompleter implements TabCompleter {
 
 	@Override
 	public List<String> onTabComplete(CommandSender sender, Command cmd, String label, String[] args) {
-		final List<String> completions = new ArrayList();
+		final List<String> completions = new ArrayList<>();
 		if (args.length == 1) {
 			StringUtil.copyPartialMatches(args[0], Arrays.asList(new String[] {"clear", "version"}), completions);
 			if (StringUtils.startsWithIgnoreCase("bulkmail", args[0])
@@ -61,8 +61,10 @@ public class MailTabCompleter implements TabCompleter {
 	
 	public List<String> getPlayers() {
 		FileConfiguration mailboxesConfig = RealMail.getPlugin(RealMail.class).mailboxesConfig;
-		final List<String> usernames = new ArrayList();
-		for (String uuid : (List<String>)mailboxesConfig.getList("players", new ArrayList()))
+		@SuppressWarnings("unchecked")
+		final List<String> playersUUIDs = (List<String>)mailboxesConfig.getList("players", new ArrayList<>());
+		final List<String> usernames = new ArrayList<>();
+		for (String uuid : playersUUIDs)
 			usernames.add(Bukkit.getOfflinePlayer(UUID.fromString(uuid)).getName());
 		return usernames;
 	}

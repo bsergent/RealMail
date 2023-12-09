@@ -89,12 +89,13 @@ public class OfflineHandler {
         }
     }
     
+	@SuppressWarnings("unchecked")
     public static void loadCaches() {
          try {
             ObjectInput input = new ObjectInputStream(new BufferedInputStream(new FileInputStream(OFFLINECACHEFILE)));
             try {
-                publicCache = (HashMap<UUID, UUID>) input.readObject();
-                localCache = (HashMap<UUID, UUID>) input.readObject();
+                publicCache = (HashMap<UUID, UUID>)input.readObject();
+                localCache = (HashMap<UUID, UUID>)input.readObject();
                 if (RealMail.getPlugin(RealMail.class).getConfig().getBoolean("verbose_errors", false)) {
                     Bukkit.getLogger().log(Level.INFO, "Loaded Offline UUIDs cache.");
                 }

@@ -152,6 +152,7 @@ public class RealMail extends JavaPlugin {
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
 		if (cmd.getName().equalsIgnoreCase("realmail")) { // TODO Separate commands into separate files and then register with Bukkit
@@ -233,13 +234,15 @@ public class RealMail extends JavaPlugin {
 					} else if (args[0].equals("bulksend")) {
 						if (player.hasPermission("realmail.admin.bulkmail")) {
 							ItemStack itemHand = player.getItemInHand();
+
 							// If valid letter/package
 							if (itemHand.getType() == Material.WRITTEN_BOOK && itemHand.hasItemMeta() && itemHand.getItemMeta().hasDisplayName() && (itemHand.getItemMeta().getDisplayName().contains("Letter") || itemHand.getItemMeta().getDisplayName().contains("Package"))) {
+
+								List<ItemStack> attachments = new ArrayList<>();
 								
 								// Check if the item is a package
 								boolean isPackage = itemHand.getItemMeta().getDisplayName().contains("Package") && itemHand.getItemMeta().hasLore();
 								String originalCode = "";
-								List<ItemStack> attachments = new LinkedList();
 								if (isPackage) {
 									// Get original code
 									for (String l : itemHand.getItemMeta().getLore())
@@ -247,12 +250,12 @@ public class RealMail extends JavaPlugin {
 											originalCode = l.replace("§r§7ID: ", "");
 									
 									// Get original attachments
-									attachments = (List<ItemStack>) packagesConfig.getList(originalCode, new LinkedList());
+									attachments = (List<ItemStack>)packagesConfig.getList(originalCode, new LinkedList<>());
 								}
 
 								// Loop through all known players
-								List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList());
-								for (String p : players) {
+								List<String> playerUUIDs = (List<String>)mailboxesConfig.getList("players", new LinkedList<>());
+								for (String uuid : playerUUIDs) {
 									
 									// Update lore and packages config if package
 									if (isPackage) {
@@ -268,7 +271,7 @@ public class RealMail extends JavaPlugin {
 										itemHand.setItemMeta(im);
 										
 										// Duplicate attachments
-										List<ItemStack> newAttachments = new LinkedList();
+										List<ItemStack> newAttachments = new LinkedList<>();
 										for (ItemStack a : attachments)
 											newAttachments.add(a.clone());
 										
@@ -277,7 +280,7 @@ public class RealMail extends JavaPlugin {
 									}
 									
 									// Send letter/package
-									sendMail(itemHand, player, OfflineHandler.getLocalUUID(UUID.fromString(p)), false, true);
+									sendMail(itemHand, player, OfflineHandler.getLocalUUID(UUID.fromString(uuid)), false, true);
 								}
 
 								// After looping through the players, get rid of the original attachment code and save the new ones
@@ -423,8 +426,9 @@ public class RealMail extends JavaPlugin {
 			viewer.sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.openedMailbox", "Opened {0}'s mailbox.").replaceAll("\\{0}", name));
 		}
 		Inventory mailInv = Bukkit.createInventory(viewer, getConfig().getInt("mailbox_rows", 2) * 9, title);
-		List<org.bukkit.inventory.meta.BookMeta> letters = (List<org.bukkit.inventory.meta.BookMeta>) mailboxesConfig.getList(publicUUID + ".letters", new LinkedList<org.bukkit.inventory.meta.BookMeta>());
-		for (org.bukkit.inventory.meta.BookMeta letterMeta : letters) {
+		@SuppressWarnings("unchecked")
+		List<BookMeta> letters = (List<BookMeta>)mailboxesConfig.getList(publicUUID + ".letters", new LinkedList<BookMeta>());
+		for (BookMeta letterMeta : letters) {
 			ItemStack newBook;
 			if (letterMeta.getDisplayName().contains("Stationary") || letterMeta.getDisplayName().contains("Stationery")) {
 				newBook = new ItemStack(Material.WRITABLE_BOOK, 1);
@@ -432,7 +436,7 @@ public class RealMail extends JavaPlugin {
 				newBook = new ItemStack(Material.WRITTEN_BOOK, 1);
 			}
 			newBook.setItemMeta(letterMeta);
-			HashMap leftover = mailInv.addItem(newBook);
+			HashMap<Integer, ItemStack> leftover = mailInv.addItem(newBook);
 			if (!leftover.isEmpty()) {
 				viewer.sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.notAllShown", "Not all letters could be shown. Please empty your mailbox."));
 				break;
@@ -453,14 +457,14 @@ public class RealMail extends JavaPlugin {
 		BookMeta mailMeta = (BookMeta) mailItem.getItemMeta();
 		if (bulkMail)
 			mailMeta.setTitle("Everyone");
-		if (mailboxesConfig.getList(onlineUUID + ".letters", new LinkedList()).size() < (getConfig().getInt("mailbox_rows", 4) * 9)) {
+		if (mailboxesConfig.getList(onlineUUID + ".letters", new LinkedList<>()).size() < (getConfig().getInt("mailbox_rows", 4) * 9)) {
 			java.util.Date dateRaw = java.util.Calendar.getInstance().getTime();
 			java.text.SimpleDateFormat format = new java.text.SimpleDateFormat();
 			format.applyPattern(getConfig().getString("dateformat"));
 			String dateString = format.format(dateRaw);
 
-			List<String> oldLore = (List<String>) mailMeta.getLore();
-			List<String> lore = (List<String>) new LinkedList(Arrays.asList("§r§7To: " + mailMeta.getTitle(), "§r§7Date: " + dateString));
+			List<String> oldLore = (List<String>)mailMeta.getLore();
+			List<String> lore = (List<String>)new LinkedList<>(Arrays.asList("§r§7To: " + mailMeta.getTitle(), "§r§7Date: " + dateString));
 			for (String oldLoreLine : oldLore) {
 				if (oldLoreLine.contains("ID")) {
 					lore.add(oldLoreLine);
@@ -469,7 +473,8 @@ public class RealMail extends JavaPlugin {
 			}
 			mailMeta.setLore(lore);
 
-			List<org.bukkit.inventory.meta.BookMeta> letters = (List<org.bukkit.inventory.meta.BookMeta>) mailboxesConfig.getList(onlineUUID + ".letters", new LinkedList());
+			@SuppressWarnings("unchecked")
+			List<BookMeta> letters = (List<BookMeta>)mailboxesConfig.getList(onlineUUID + ".letters", new LinkedList<>());
 			letters.add(mailMeta);
 			mailboxesConfig.set(onlineUUID + ".letters", letters);
 			mailboxesConfig.set(onlineUUID + ".unread", true);
@@ -567,11 +572,13 @@ public class RealMail extends JavaPlugin {
 				} /* Stationery Stuff */ else if (is.getType() == Material.WRITTEN_BOOK && is.hasItemMeta() && is.getItemMeta().hasLore() && is.getItemMeta().hasDisplayName() && (is.getItemMeta().getDisplayName().contains("§rLetter") || is.getItemMeta().getDisplayName().contains("§rPackage"))) {
 					if (e.getClickedBlock() != null && e.getClickedBlock().getType().equals(Material.PLAYER_HEAD)) {
 
-						List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
+						@SuppressWarnings("unchecked")
+						List<String> players = (List<String>)mailboxesConfig.getList("players", new LinkedList<>());
 
 						playersLoop:
 						for (String p : players) {
-							List<Location> playersMailboxLocations = (List<Location>) mailboxesConfig.getList(OfflineHandler.getPublicUUID(UUID.fromString(p)) + ".mailboxes", new LinkedList<Location>());
+							@SuppressWarnings("unchecked")
+							List<Location> playersMailboxLocations = (List<Location>)mailboxesConfig.getList(OfflineHandler.getPublicUUID(UUID.fromString(p)) + ".mailboxes", new LinkedList<>());
 							for (Location loc : playersMailboxLocations) {
 								if (e.getClickedBlock().getLocation().equals(loc)) {
 									org.bukkit.inventory.meta.BookMeta newLetter = (org.bukkit.inventory.meta.BookMeta) is.getItemMeta();
@@ -598,10 +605,12 @@ public class RealMail extends JavaPlugin {
 
 			/* Open Mailbox */
 			if (e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getClickedBlock() != null && e.getClickedBlock().getType().equals(Material.PLAYER_HEAD) && e.getPlayer().getItemInHand().getType() != Material.WRITTEN_BOOK) {
-				List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
+				@SuppressWarnings("unchecked")
+				List<String> players = (List<String>)mailboxesConfig.getList("players", new LinkedList<>());
 				OfflinePlayer mailboxOwner = null;
 				for (String p : players) {
-					List<Location> locations = (List<Location>) mailboxesConfig.getList(OfflineHandler.getPublicUUID(UUID.fromString(p)) + ".mailboxes", new LinkedList<Location>());
+					@SuppressWarnings("unchecked")
+					List<Location> locations = (List<Location>)mailboxesConfig.getList(OfflineHandler.getPublicUUID(UUID.fromString(p)) + ".mailboxes", new LinkedList<>());
 					for (Location loc : locations) {
 						if (e.getClickedBlock().getLocation().equals(loc)) {
 							mailboxOwner = Bukkit.getOfflinePlayer(OfflineHandler.getLocalUUID(UUID.fromString(p)));
@@ -659,7 +668,7 @@ public class RealMail extends JavaPlugin {
 						}
 					}
 
-// Check if the recipient exists before signing
+					// Check if the recipient exists before signing
 					if (mailboxesConfig.getList("players", new LinkedList<String>()).contains(OfflineHandler.getPublicUUID(Bukkit.getOfflinePlayer(e.getNewBookMeta().getTitle()).getUniqueId()) + "")) {
 						e.setNewBookMeta(newBM);
 					} else {
@@ -669,8 +678,9 @@ public class RealMail extends JavaPlugin {
 				}
 			}
 		}
-//</editor-fold>
+		//</editor-fold>
 
+		@SuppressWarnings("unchecked")
 		@org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.NORMAL)
 		public void onInventoryClick(org.bukkit.event.inventory.InventoryClickEvent e) {
 			//<editor-fold defaultstate="collapsed" desc="Only letters and attachments in mailboxes and no villagers">
@@ -727,7 +737,7 @@ public class RealMail extends JavaPlugin {
 					e.setCancelled(true);
 				}
 			}
-//</editor-fold>
+			//</editor-fold>
 
 			//<editor-fold defaultstate="collapsed" desc="Attach items">
 			if (e.isLeftClick()) { // TODO Fix all these creative bugs
@@ -743,14 +753,14 @@ public class RealMail extends JavaPlugin {
 									e.setResult(Event.Result.DENY);
 								} else if (e.getWhoClicked().hasPermission("realmail.user.attach")) {
 									if (e.getClick() != ClickType.CREATIVE) {
-										List<ItemStack> attachments = new LinkedList<ItemStack>();
+										List<ItemStack> attachments = new LinkedList<>();
 										String code = "";
 										ItemMeta im = current.getItemMeta();
 										if (im.hasLore()) {
 											for (String loreLine : im.getLore()) {
 												if (loreLine.contains("ID")) {
 													code = loreLine.replace("§r§7ID: ", "");
-													attachments = (List<ItemStack>) packagesConfig.getList(code, new LinkedList<ItemStack>());
+													attachments = (List<ItemStack>)packagesConfig.getList(code, new LinkedList<>());
 													break;
 												}
 											}
@@ -815,7 +825,7 @@ public class RealMail extends JavaPlugin {
 								String code = loreLine.replace("§r§7ID: ", "");
 								if (packagesConfig.contains(code)) {
 
-									List<ItemStack> attachments = (List<ItemStack>) packagesConfig.getList(code, new LinkedList());
+									List<ItemStack> attachments = (List<ItemStack>)packagesConfig.getList(code, new LinkedList<>());
 									
 									if (attachments.size() > 0) {
 										e.setCurrentItem(attachments.get(0));
@@ -888,6 +898,7 @@ public class RealMail extends JavaPlugin {
 		//</editor-fold>
 
 		//<editor-fold defaultstate="collapsed" desc="Detect mailbox placing">
+		@SuppressWarnings("unchecked")
 		@org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.NORMAL)
 		public void onBlockPlace(org.bukkit.event.block.BlockPlaceEvent e) {
 			if (e.getItemInHand() != null) {
@@ -895,11 +906,11 @@ public class RealMail extends JavaPlugin {
 
 				if (is.getType() == Material.PLAYER_HEAD && is.getItemMeta().hasLore() && is.getItemMeta().getLore().size() >= 2 && is.getItemMeta().getLore().get(1).contains("Punch to change texture")) {
 
-					List<Location> locations = (List<Location>) mailboxesConfig.getList(OfflineHandler.getPublicUUID(e.getPlayer().getUniqueId()) + ".mailboxes", new LinkedList<Location>());
+					List<Location> locations = (List<Location>)mailboxesConfig.getList(OfflineHandler.getPublicUUID(e.getPlayer().getUniqueId()) + ".mailboxes", new LinkedList<>());
 					locations.add(e.getBlock().getLocation());
 					mailboxesConfig.set(OfflineHandler.getPublicUUID(e.getPlayer().getUniqueId()) + ".mailboxes", locations);
 
-					List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList());
+					List<String> players = (List<String>)mailboxesConfig.getList("players", new LinkedList<>());
 					if (!players.contains(OfflineHandler.getPublicUUID(e.getPlayer().getUniqueId()).toString())) {
 						players.add(OfflineHandler.getPublicUUID(e.getPlayer().getUniqueId()) + "");
 					}
@@ -921,16 +932,17 @@ public class RealMail extends JavaPlugin {
 		//</editor-fold>
 
 		//<editor-fold defaultstate="collapsed" desc="Detect mailbox breaking">
+		@SuppressWarnings("unchecked")
 		@org.bukkit.event.EventHandler(priority = org.bukkit.event.EventPriority.NORMAL)
 		public void onBlockBreak(org.bukkit.event.block.BlockBreakEvent e) {
-			List<String> players = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
-			for (String p : players) {
-				List<Location> locations = (List<Location>) mailboxesConfig.getList(OfflineHandler.getPublicUUID(e.getPlayer().getUniqueId()) + ".mailboxes", new LinkedList<Location>());
+			List<String> playerUUIDs = (List<String>)mailboxesConfig.getList("players", new LinkedList<>());
+			for (String uuid : playerUUIDs) {
+				List<Location> locations = (List<Location>)mailboxesConfig.getList(uuid + ".mailboxes", new LinkedList<>());
 				for (Location loc : locations) {
 					if (e.getBlock().getLocation().equals(loc)) {
 
 						locations.remove(e.getBlock().getLocation());
-						mailboxesConfig.set(OfflineHandler.getPublicUUID(e.getPlayer().getUniqueId()) + ".mailboxes", locations);
+						mailboxesConfig.set(uuid + ".mailboxes", locations);
 
 						try {
 							mailboxesConfig.save(mailboxesFile);
@@ -990,7 +1002,8 @@ public class RealMail extends JavaPlugin {
 					}
 				}
 			} else {
-				List<String> knownPlayers = (List<String>) mailboxesConfig.getList("players", new LinkedList<String>());
+				@SuppressWarnings("unchecked")
+				List<String> knownPlayers = (List<String>)mailboxesConfig.getList("players", new LinkedList<>());
 				knownPlayers.add(OfflineHandler.getPublicUUID(e.getPlayer().getUniqueId()).toString());
 				mailboxesConfig.set("players", knownPlayers);
 				try {
