@@ -1,5 +1,6 @@
 package us.hexfrost.realmail;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,10 +16,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.block.Action;
@@ -26,6 +30,7 @@ import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.BookMeta;
@@ -39,14 +44,14 @@ import org.bukkit.plugin.java.JavaPlugin;
  */
 public class RealMail extends JavaPlugin {
 
-	protected org.bukkit.configuration.file.FileConfiguration mailboxesConfig = null;
-	private java.io.File mailboxesFile = null;
-	protected org.bukkit.configuration.file.FileConfiguration packagesConfig = null;
-	private java.io.File packagesFile = null;
-	protected org.bukkit.configuration.file.FileConfiguration languageConfig = null;
-	private java.io.File languageFile = null;
-	private ItemMeta mailboxRecipeMeta = null;
-	private org.bukkit.inventory.meta.BookMeta stationeryMeta = null;
+	protected FileConfiguration mailboxesConfig = null;
+	private File mailboxesFile = null;
+	protected FileConfiguration packagesConfig = null;
+	private File packagesFile = null;
+	protected FileConfiguration languageConfig = null;
+	private File languageFile = null;
+	private ItemMeta mailboxCouponMeta = null;
+	private BookMeta stationeryMeta = null;
 	private String prefix = ChatColor.WHITE + "[" + ChatColor.GOLD + "Mail" + ChatColor.WHITE + "]";
 
 	/* Mailbox Textures */
@@ -64,77 +69,86 @@ public class RealMail extends JavaPlugin {
 		getConfig().options().copyDefaults(true);
 		saveConfig();
 
-		ItemStack blueMailboxCoupon = new ItemStack(Material.PAPER, 1);
-		mailboxRecipeMeta = blueMailboxCoupon.getItemMeta();
-		mailboxRecipeMeta.setDisplayName("§rMailbox Recipe");
-		mailboxRecipeMeta.setLore(Arrays.asList("§r§7Right-click with this coupon", "§r§7to get a mailbox"));
-		blueMailboxCoupon.setItemMeta(mailboxRecipeMeta);
-		ShapedRecipe blueMailboxRecipe = new ShapedRecipe(blueMailboxCoupon);
-		blueMailboxRecipe.shape("  w", "iii", "ici");
-		blueMailboxRecipe.setIngredient('w', org.bukkit.Material.WHITE_WOOL, -1);
-		blueMailboxRecipe.setIngredient('i', org.bukkit.Material.IRON_INGOT);
-		blueMailboxRecipe.setIngredient('c', org.bukkit.Material.CHEST);
-		this.getServer().addRecipe(blueMailboxRecipe);
+		// Define mailbox coupon
+		var mailboxCoupon = new ItemStack(Material.PAPER, 1);
+		mailboxCouponMeta = mailboxCoupon.getItemMeta();
+		mailboxCouponMeta.setDisplayName("§rMailbox Recipe");
+		mailboxCouponMeta.setLore(Arrays.asList(
+			"§r§7Right-click with this coupon",
+			"§r§7to get a mailbox"));
+		mailboxCoupon.setItemMeta(mailboxCouponMeta);
 
-		ItemStack stationery = new ItemStack(Material.WRITABLE_BOOK, 1);
-		stationeryMeta = (org.bukkit.inventory.meta.BookMeta) stationery.getItemMeta();
+		// Register mailbox coupon recipe
+		var mailboxRecipe = new ShapedRecipe(new NamespacedKey(this, "mailbox_coupon"), mailboxCoupon)
+			.shape("  w", "iii", "ici")
+			.setIngredient('w', new RecipeChoice.MaterialChoice( // Any wool color
+				Material.WHITE_WOOL, Material.GRAY_WOOL, Material.LIGHT_GRAY_WOOL, Material.BLACK_WOOL,
+				Material.RED_WOOL, Material.PINK_WOOL, Material.MAGENTA_WOOL, Material.PURPLE_WOOL,
+				Material.BLUE_WOOL, Material.LIGHT_BLUE_WOOL, Material.CYAN_WOOL, Material.LIME_WOOL,
+				Material.GREEN_WOOL, Material.YELLOW_WOOL, Material.ORANGE_WOOL, Material.BROWN_WOOL))
+			.setIngredient('i', Material.IRON_INGOT)
+			.setIngredient('c', Material.CHEST);
+		this.getServer().addRecipe(mailboxRecipe);
+
+		// Define stationery
+		var stationery = new ItemStack(Material.WRITABLE_BOOK, 1);
+		stationeryMeta = (BookMeta)stationery.getItemMeta();
 		stationeryMeta.setDisplayName("§rStationery");
-		stationeryMeta.setLore(Arrays.asList("§r§7Right-click a mailbox to send after signing", "§r§7Use the name of the recipient as the title"));
+		stationeryMeta.setLore(Arrays.asList(
+			"§r§7Right-click a mailbox to send after signing",
+			"§r§7Use the name of the recipient as the title"));
 		stationeryMeta.addPage("");
 		stationery.setItemMeta(stationeryMeta);
-		ShapelessRecipe stationeryRecipe = new ShapelessRecipe(stationery);
+
+		// Register stationery recipe
+		var stationeryRecipe = new ShapelessRecipe(new NamespacedKey(this, "stationery"), stationery);
 		stationeryRecipe.addIngredient(Material.PAPER);
 		stationeryRecipe.addIngredient(Material.FEATHER);
 		this.getServer().addRecipe(stationeryRecipe);
 
-		if (getConfig().getString("prefix") != null) {
+		// Specify the plugin's formatted chat prefix
+		if (getConfig().getString("prefix") != null)
 			prefix = getConfig().getString("prefix").replaceAll("&", "§");
-		}
 		prefix = prefix + " ";
 
-		if (mailboxesFile == null) {
-			mailboxesFile = new java.io.File(getDataFolder(), "mailboxes.yml");
-		}
-		mailboxesConfig = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(mailboxesFile);
+		// Load data storage YAML files
+		mailboxesFile = new File(getDataFolder(), "mailboxes.yml");
+		mailboxesConfig = YamlConfiguration.loadConfiguration(mailboxesFile);
+		packagesFile = new File(getDataFolder(), "packages.yml");
+		packagesConfig = YamlConfiguration.loadConfiguration(packagesFile);
 
-		if (packagesFile == null) {
-			packagesFile = new java.io.File(getDataFolder(), "packages.yml");
-		}
-		packagesConfig = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(packagesFile);
-
-		if (languageFile == null) {
-			languageFile = new java.io.File(getDataFolder(), "language.yml");
-			if (!languageFile.exists()) {
-				try {
-					InputStream in = getResource("language.yml");
-					OutputStream out = new FileOutputStream(languageFile);
-					byte[] buf = new byte[1024];
-					int len;
-					while ((len = in.read(buf)) > 0) {
-						out.write(buf, 0, len);
-					}
-					out.close();
-					in.close();
-				} catch (IOException ex) {
-					if (getConfig().getBoolean("verbose_errors", false)) {
-						getLogger().log(Level.WARNING, "Could not create a default languages.yml file.");
-					}
-				}
+		// Load language localizations
+		languageFile = new File(getDataFolder(), "language.yml");
+		// Write defaults from resources to config directory
+		if (!languageFile.exists()) {
+			try {
+				InputStream in = getResource("language.yml");
+				OutputStream out = new FileOutputStream(languageFile);
+				byte[] buf = new byte[1024];
+				int len;
+				while ((len = in.read(buf)) > 0)
+					out.write(buf, 0, len);
+				out.close();
+				in.close();
+			} catch (IOException ex) {
+				if (getConfig().getBoolean("verbose_errors", false))
+					getLogger().log(Level.WARNING, "Could not create a default languages.yml file.");
 			}
-
 		}
-		languageConfig = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(languageFile);
+		languageConfig = YamlConfiguration.loadConfiguration(languageFile);
 
-		if (RealMail.getPlugin(RealMail.class).getConfig().getBoolean("offline_mode", false)) {
+		// Load offline UUID cache
+		if (RealMail.getPlugin(RealMail.class).getConfig().getBoolean("offline_mode", false))
 			OfflineHandler.loadCaches();
-		}
 
 		// TODO Send analytics here
 
+		// Register events
 		getServer().getPluginManager().registerEvents(new MailListener(), this);
 		getServer().getPluginManager().registerEvents(new LoginListener(), this);
 		this.getCommand("realmail").setTabCompleter(new MailTabCompleter());
 
+		// Log that plugin has successfully initialized
 		getLogger().log(Level.INFO, "RealMail v{0} enabled.", getVersion());
 	}
 
@@ -977,7 +991,7 @@ public class RealMail extends JavaPlugin {
 						}
 					}
 				}
-			} else if (e.getRecipe().getResult().hasItemMeta() && e.getRecipe().getResult().getItemMeta().hasLore() && e.getRecipe().getResult().getItemMeta().getDisplayName().contains(mailboxRecipeMeta.getDisplayName())) { // Mailbox
+			} else if (e.getRecipe().getResult().hasItemMeta() && e.getRecipe().getResult().getItemMeta().hasLore() && e.getRecipe().getResult().getItemMeta().getDisplayName().contains(mailboxCouponMeta.getDisplayName())) { // Mailbox
 				if (!e.getWhoClicked().hasPermission("realmail.user.craft.mailbox")) {
 					e.getWhoClicked().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("noperm.craftMailbox", "You do not have permission to craft a mailbox."));
 					e.setResult(Event.Result.DENY);
