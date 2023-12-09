@@ -39,7 +39,6 @@ import org.bukkit.plugin.java.JavaPlugin;
  */
 public class RealMail extends JavaPlugin {
 
-	private final String version = "0.3.2";
 	protected org.bukkit.configuration.file.FileConfiguration mailboxesConfig = null;
 	private java.io.File mailboxesFile = null;
 	protected org.bukkit.configuration.file.FileConfiguration packagesConfig = null;
@@ -136,7 +135,7 @@ public class RealMail extends JavaPlugin {
 		getServer().getPluginManager().registerEvents(new LoginListener(), this);
 		this.getCommand("realmail").setTabCompleter(new MailTabCompleter());
 
-		getLogger().log(Level.INFO, "RealMail v{0} enabled.", version);
+		getLogger().log(Level.INFO, "RealMail v{0} enabled.", getVersion());
 	}
 
 	@Override
@@ -145,7 +144,11 @@ public class RealMail extends JavaPlugin {
 			OfflineHandler.saveCaches();
 		}
 
-		getLogger().log(Level.INFO, "RealMail v{0} disabled.", version);
+		getLogger().log(Level.INFO, "RealMail v{0} disabled.", getVersion());
+	}
+
+	public String getVersion() {
+		return getDescription().getVersion();
 	}
 
 	@Override
@@ -206,7 +209,7 @@ public class RealMail extends JavaPlugin {
 			} //</editor-fold>
 
 			if (args.length >= 1 && args[0].equals("version")) {
-				sender.sendMessage(new String[]{ChatColor.GOLD + "RealMail v" + version, "Go to http://dev.bukkit.org/bukkit-plugins/realmail/ for updates."});
+				sender.sendMessage(new String[]{ChatColor.GOLD + "RealMail v" + getVersion(), "Go to http://dev.bukkit.org/bukkit-plugins/realmail/ for updates."});
 			} else if (args.length >= 1 && args[0].equals("reload")) {
 				Bukkit.getServer().getPluginManager().getPlugin("RealMail").reloadConfig();
 			} else if (!(sender instanceof Player)) {

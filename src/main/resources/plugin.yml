@@ -4,9 +4,9 @@ version: ${project.version}
 author: Ben Sergent V
 website: http://dev.bukkit.org/bukkit-plugins/realmail/
 
-main: com.challengercity.plugins.realmail.RealMail
+main: us.hexfrost.realmail.RealMail
 database: false
-api-version: 1.13
+api-version: 1.18
 softdepend: [Multiverse-Core]
 
 permissions:
