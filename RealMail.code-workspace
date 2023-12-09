@@ -10,6 +10,8 @@
 		"java.jdt.ls.java.home": "C:\\Program Files\\Java\\jdk-17.0.1",
 		"java.jdt.ls.vmargs": "-Dfile.encoding=UTF-8",
 		"javac-linter.javac": "javac -Dfile.encoding=UTF-8",
-		"java.configuration.updateBuildConfiguration": "automatic"
+		"java.configuration.updateBuildConfiguration": "automatic",
+		"java.eclipse.downloadSources": true,
+		"java.maven.downloadSources": true
 	}
 }
