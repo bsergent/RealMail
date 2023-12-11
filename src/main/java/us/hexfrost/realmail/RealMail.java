@@ -12,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
+
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -231,11 +232,11 @@ public class RealMail extends JavaPlugin {
 				sender.sendMessage(prefix + ChatColor.WHITE + "This command can only be run by a player.");
 			} else {
 				//<editor-fold defaultstate="collapsed" desc="Player-only Commands">
-				Player player = (Player) sender;
+				Player player = (Player)sender;
+				ItemStack itemHand = player.getInventory().getItemInMainHand();
 				if (args.length >= 1) {
 					if (args[0].equals("send")) {
 						if (player.hasPermission("realmail.admin.sendmailAnywhere")) {
-							ItemStack itemHand = player.getItemInHand();
 							if (itemHand.getType() == Material.WRITTEN_BOOK && itemHand.hasItemMeta() && itemHand.getItemMeta().hasDisplayName() && (itemHand.getItemMeta().getDisplayName().contains("Letter") || itemHand.getItemMeta().getDisplayName().contains("Package"))) {
 								BookMeta bookMeta = (BookMeta) itemHand.getItemMeta();
 								sendMail(itemHand, player, Bukkit.getOfflinePlayer(bookMeta.getTitle()).getUniqueId(), true);
@@ -245,10 +246,9 @@ public class RealMail extends JavaPlugin {
 						} else {
 							player.sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("noperm.sendFromAnywhere", "You do not have permission to send mail from anywhere."));
 						}
+
 					} else if (args[0].equals("bulksend")) {
 						if (player.hasPermission("realmail.admin.bulkmail")) {
-							ItemStack itemHand = player.getItemInHand();
-
 							// If valid letter/package
 							if (itemHand.getType() == Material.WRITTEN_BOOK && itemHand.hasItemMeta() && itemHand.getItemMeta().hasDisplayName() && (itemHand.getItemMeta().getDisplayName().contains("Letter") || itemHand.getItemMeta().getDisplayName().contains("Package"))) {
 
@@ -372,7 +372,7 @@ public class RealMail extends JavaPlugin {
 						}
 					}
 				}
-//</editor-fold>
+				//</editor-fold>
 			}
 
 		}
@@ -618,7 +618,7 @@ public class RealMail extends JavaPlugin {
 			} // End empty hand detection
 
 			/* Open Mailbox */
-			if (e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getClickedBlock() != null && e.getClickedBlock().getType().equals(Material.PLAYER_HEAD) && e.getPlayer().getItemInHand().getType() != Material.WRITTEN_BOOK) {
+			if (e.getAction() == Action.RIGHT_CLICK_BLOCK && e.getClickedBlock() != null && e.getClickedBlock().getType().equals(Material.PLAYER_HEAD) && e.getPlayer().getInventory().getItemInMainHand().getType() != Material.WRITTEN_BOOK) {
 				@SuppressWarnings("unchecked")
 				List<String> players = (List<String>)mailboxesConfig.getList("players", new LinkedList<>());
 				OfflinePlayer mailboxOwner = null;
@@ -755,17 +755,18 @@ public class RealMail extends JavaPlugin {
 
 			//<editor-fold defaultstate="collapsed" desc="Attach items">
 			if (e.isLeftClick()) { // TODO Fix all these creative bugs
-				ItemStack current = e.getCurrentItem();
-				ItemStack cursor = e.getCursor();
+				var current = e.getCurrentItem();
+				var cursor = e.getCursor();
+				var player = e.getWhoClicked();
 
 				if ((current == null || current.getType() == Material.WRITABLE_BOOK) && cursor != null && cursor.getType() != Material.AIR) {
 					if (current != null && current.hasItemMeta()) {
 						if (current.getItemMeta().hasDisplayName()) {
 							if (current.getItemMeta().getDisplayName().contains("Stationary") || current.getItemMeta().getDisplayName().contains("Stationery") || current.getItemMeta().getDisplayName().contains("Package")) {
 								if (cursor != null && cursor.hasItemMeta() && cursor.getItemMeta().hasDisplayName() && cursor.getItemMeta().getDisplayName().contains("Package")) {
-									e.getWhoClicked().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.packageInPackage", "You can't put packages inside of packages. You'll create package-ception."));
+									player.sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.packageInPackage", "You can't put packages inside of packages. You'll create package-ception."));
 									e.setResult(Event.Result.DENY);
-								} else if (e.getWhoClicked().hasPermission("realmail.user.attach")) {
+								} else if (player.hasPermission("realmail.user.attach")) {
 									if (e.getClick() != ClickType.CREATIVE) {
 										List<ItemStack> attachments = new LinkedList<>();
 										String code = "";
@@ -773,13 +774,13 @@ public class RealMail extends JavaPlugin {
 										if (im.hasLore()) {
 											for (String loreLine : im.getLore()) {
 												if (loreLine.contains("ID")) {
-													code = loreLine.replace("§r§7ID: ", "");
+													code = loreLine.replace("" + ChatColor.RESET + ChatColor.GRAY + "ID: ", "");
 													attachments = (List<ItemStack>)packagesConfig.getList(code, new LinkedList<>());
 													break;
 												}
 											}
 										}
-										if (attachments.size() < getConfig().getInt("max_attachments", 4) || e.getWhoClicked().hasPermission("realmail.admin.bypassAttachmentLimits")) {
+										if (attachments.size() < getConfig().getInt("max_attachments", 4) || player.hasPermission("realmail.admin.bypassAttachmentLimits")) {
 											if (code.equals("")) {
 												code = generatePackageCode();
 												List<String> lore = im.getLore();
@@ -802,25 +803,23 @@ public class RealMail extends JavaPlugin {
 											packagesConfig.set(code, attachments);
 											try {
 												packagesConfig.save(packagesFile);
-												e.getWhoClicked().sendMessage(prefix + ChatColor.WHITE + cursor.getType().name() + " x" + cursor.getAmount() + " attached.");
-												im.setDisplayName("§rPackage");
+												player.sendMessage(prefix + ChatColor.WHITE + cursor.getType().name() + " x" + cursor.getAmount() + " attached.");
+												im.setDisplayName(ChatColor.RESET + "Package");
 												current.setItemMeta(im);
-												e.setCursor(new ItemStack(Material.AIR));
-//cursor.setType(Material.AIR);
-//cursor.setAmount(0);
-												e.setResult(Event.Result.DENY);
+												player.setItemOnCursor(new ItemStack(Material.AIR)); // Remove the item from the cursor (has been inserted into package)
+												e.setResult(Event.Result.DENY); // Prevent picking up the package
 											} catch (Exception ex) {
-												e.getWhoClicked().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.couldNotAttach", "Could not attach the item."));
+												player.sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.couldNotAttach", "Could not attach the item."));
 											}
 										} else {
-											e.getWhoClicked().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.maxAlreadyAttached", "Max items already attached. ({0})").replaceAll("\\{0}", getConfig().getInt("max_attachments", 4) + ""));
+											player.sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.maxAlreadyAttached", "Max items already attached. ({0})").replaceAll("\\{0}", getConfig().getInt("max_attachments", 4) + ""));
 											e.setResult(Event.Result.DENY);
 										}
 									} else {
-										e.getWhoClicked().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.attachInCreative", "Attaching and detaching items in creative is currently disabled due to bugs."));
+										player.sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.attachInCreative", "Attaching and detaching items in creative is currently disabled due to bugs."));
 									}
 								} else {
-									e.getWhoClicked().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("noperm.attachments", "You do not have permission to attach items."));
+									player.sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("noperm.attachments", "You do not have permission to attach items."));
 									e.setResult(Event.Result.DENY);
 								}
 							}
@@ -984,9 +983,9 @@ public class RealMail extends JavaPlugin {
 					e.getWhoClicked().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("noperm.craftStationary", "You do not have permission to craft stationery."));
 					e.setResult(Event.Result.DENY);
 				} else if (getConfig().getBoolean("reusable_feather", true) && e.getResult() == Event.Result.ALLOW || e.getResult() == Event.Result.DEFAULT) {
-					ItemStack[] cTable = e.getInventory().getMatrix();
-					for (ItemStack is : cTable) {
-						if (is != null && is.getData().getItemType() == Material.FEATHER) {
+					ItemStack[] craftingMatrix = e.getInventory().getMatrix();
+					for (ItemStack is : craftingMatrix) {
+						if (is != null && is.getType() == Material.FEATHER) {
 							is.setAmount(is.getAmount() + 1);
 						}
 					}
