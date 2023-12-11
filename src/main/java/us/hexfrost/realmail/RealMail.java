@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 
+import org.apache.commons.lang3.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -36,7 +37,11 @@ import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.ShapelessRecipe;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import com.mojang.authlib.GameProfile;
+import com.mojang.authlib.properties.Property;
 
 /**
  *
@@ -56,14 +61,11 @@ public class RealMail extends JavaPlugin {
 	private String prefix = ChatColor.WHITE + "[" + ChatColor.GOLD + "Mail" + ChatColor.WHITE + "]";
 
 	/* Mailbox Textures */
+	public enum MailboxColor { BLUE, WHITE, RED, GREEN }
 	private final String mailboxTextureBlue = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYjZhNDllZmFhYWI1MzI1NTlmZmY5YWY3NWRhNmFjNGRkNzlkMTk5ZGNmMmZkNDk3Yzg1NDM4MDM4NTY0In19fQ==";
-	private final String mailboxIdBlue = "48614330-6c44-47be-85ec-33ed037cf48c";
 	private final String mailboxTextureWhite = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZTM5ZTE5NzFjYmMzYzZmZWFhYjlkMWY4NWZjOWQ5YmYwODY3NjgzZjQxMjk1NWI5NjExMTdmZTY2ZTIifX19";
-	private final String mailboxIdWhite = "480bff09-ed89-4214-a2bd-dab19fa5177d";
 	private final String mailboxTextureRed = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNGZhODljZTg1OTMyYmVjMWExYzNmMzFjYjdjMDg1YTViZmIyYWM3ZTQwNDA5NDIwOGMzYWQxMjM4NzlkYTZkYSJ9fX0=";
-	private final String mailboxIdRed = "6a71ad04-2422-41f3-a501-6ea5707aaef3";
 	private final String mailboxTextureGreen = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYzJiY2NiNTI0MDg4NWNhNjRlNDI0YTBjMTY4YTc4YzY3NmI4Yzg0N2QxODdmNmZiZjYwMjdhMWZlODZlZSJ9fX0=";
-	private final String mailboxIdGreen = "60621c0e-cb3e-471b-a237-4dec155f4889";
 
 	@Override
 	public void onEnable() {
@@ -75,8 +77,8 @@ public class RealMail extends JavaPlugin {
 		mailboxCouponMeta = mailboxCoupon.getItemMeta();
 		mailboxCouponMeta.setDisplayName("§rMailbox Recipe");
 		mailboxCouponMeta.setLore(Arrays.asList(
-			"§r§7Right-click with this coupon",
-			"§r§7to get a mailbox"));
+			"" + ChatColor.RESET + ChatColor.GRAY + "Right-click with this coupon",
+			"" + ChatColor.RESET + ChatColor.GRAY + "to get a mailbox"));
 		mailboxCoupon.setItemMeta(mailboxCouponMeta);
 
 		// Register mailbox coupon recipe
@@ -380,43 +382,70 @@ public class RealMail extends JavaPlugin {
 		return true;
 	}
 
-	public void giveMailbox(Player ply) {
-		giveMailbox(ply, "Blue");
-	}
-	public void giveMailbox(Player ply, String color) {
-		String id;
-		String base64;
+	public String getBase64ForColor(MailboxColor color) {
 		switch (color) {
-			case "Blue":
-				id = mailboxIdBlue;
-				base64 = mailboxTextureBlue;
-				break;
-			case "White":
-				id = mailboxIdWhite;
-				base64 = mailboxTextureWhite;
-				break;
-			case "Red":
-				id = mailboxIdRed;
-				base64 = mailboxTextureRed;
-				break;
-			case "Green":
-				id = mailboxIdGreen;
-				base64 = mailboxTextureGreen;
-				break;
+			case WHITE:
+				return mailboxTextureWhite;
+			case RED:
+				return mailboxTextureRed;
+			case GREEN:
+				return mailboxTextureGreen;
+			case BLUE:
 			default:
-				return;
+				return mailboxTextureBlue;
 		}
-		StringBuilder sb = new StringBuilder();
-		sb.append("minecraft:give ");
-		sb.append(ply.getName());
-		sb.append(" minecraft:player_head{display:{Name:\"{\\\"text\\\":\\\"Mailbox\\\", \\\"color\\\":\\\"reset\\\", \\\"italic\\\":false}\",Lore:[\"{\\\"text\\\":\\\"");
-		sb.append(color);
-		sb.append("\\\", \\\"color\\\":\\\"gray\\\", \\\"italic\\\":false}\",\"{\\\"text\\\":\\\"Punch to change texture\\\", \\\"color\\\":\\\"gray\\\",\\\"italic\\\":false}\"]},SkullOwner:{Id:\"");
-		sb.append(id);
-		sb.append("\",Properties:{textures:[{Value:\"");
-		sb.append(base64);
-		sb.append("\"}]}}} 1");
-		getServer().dispatchCommand(getServer().getConsoleSender(), sb.toString());
+	}
+
+	public void setMailboxColor(ItemStack isMailbox, MailboxColor color) {
+		// Figure out which texture to use
+		String base64 = getBase64ForColor(color);
+
+		// Set base64 texture data
+		var im = (SkullMeta)isMailbox.getItemMeta();
+		var profile = new GameProfile(UUID.randomUUID(), null);
+		profile.getProperties().put("textures", new Property("textures", base64));
+		try {
+			// Reflect into the SkullMeta and set its profile field to the newly created one
+			// Why can't we do this via the Spigot API yet? The new PlayerProfile class doesn't
+			// seem to support direct setting of its texture property to a base64 texture.
+			var profileField = im.getClass().getDeclaredField("profile");
+			profileField.setAccessible(true);
+			profileField.set(im, profile);
+		} catch (IllegalArgumentException | SecurityException | NoSuchFieldException | IllegalAccessException ex) {
+			if (getConfig().getBoolean("verbose_errors", false))
+				ex.printStackTrace();
+		}
+		
+		// Set the lore text with the color and instructions
+		im.setLore(Arrays.asList(
+			"" + ChatColor.RESET + ChatColor.GRAY + StringUtils.capitalize(StringUtils.lowerCase(color.toString())),
+			"" + ChatColor.RESET + ChatColor.GRAY + "Punch to change texture"));
+		
+		// Apply to item
+		isMailbox.setItemMeta(im);
+	}
+
+	public ItemStack getMailboxItem() {
+		return getMailboxItem(MailboxColor.BLUE);
+	}
+	public ItemStack getMailboxItem(MailboxColor color) {
+		var isMailbox = new ItemStack(Material.PLAYER_HEAD);
+		setMailboxColor(isMailbox, color);
+		var im = (SkullMeta)isMailbox.getItemMeta();
+		im.setDisplayName(ChatColor.RESET + "Mailbox");
+		isMailbox.setItemMeta(im);
+
+		return isMailbox;
+	}
+
+	public void giveMailbox(Player ply) {
+		giveMailbox(ply, MailboxColor.BLUE);
+	}
+	public void giveMailbox(Player ply, MailboxColor color) {
+		// Give the player the mailbox (or drop it on the ground if full inventory)
+		var remainingItems = ply.getInventory().addItem(getMailboxItem(color));
+		for (ItemStack is : remainingItems.values())
+			ply.getWorld().dropItem(ply.getLocation(), is);
 	}
 
 	public void giveStationery(Player ply) {
@@ -568,19 +597,14 @@ public class RealMail extends JavaPlugin {
 					giveMailbox(e.getPlayer());
 					e.getPlayer().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.exchangedRecipe", "You exchanged your recipe for a mailbox."));
 				} /* Cycle texture */ else if (is.getType() == Material.PLAYER_HEAD && (e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK) && is.getItemMeta().hasLore() && is.getItemMeta().getLore().get(1).contains("Punch to change texture")) {
-					e.getPlayer().getInventory().removeItem(toBeRemoved);
 					if (is.getItemMeta().getLore().get(0).contains("Blue")) {
-						giveMailbox(e.getPlayer(), "White");
-						//getServer().dispatchCommand(getServer().getConsoleSender(), "minecraft:give " + e.getPlayer().getName() + " minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7White\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\"" + mailboxIdWhite + "\",Name:\"ha1fBit\",Properties:{textures:[{Value:\"" + mailboxTextureWhite + "\"}]}}}");
+						setMailboxColor(is, MailboxColor.WHITE);
 					} else if (is.getItemMeta().getLore().get(0).contains("White")) {
-						giveMailbox(e.getPlayer(), "Red");
-						//getServer().dispatchCommand(getServer().getConsoleSender(), "minecraft:give " + e.getPlayer().getName() + " minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Red\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\"" + mailboxIdRed + "\",Name:\"ha1fBit\",Properties:{textures:[{Value:\"" + mailboxTextureRed + "\"}]}}}");
+						setMailboxColor(is, MailboxColor.RED);
 					} else if (is.getItemMeta().getLore().get(0).contains("Red")) {
-						giveMailbox(e.getPlayer(), "Green");
-						//getServer().dispatchCommand(getServer().getConsoleSender(), "minecraft:give " + e.getPlayer().getName() + " minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Green\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\"" + mailboxIdGreen + "\",Name:\"ha1fBit\",Properties:{textures:[{Value:\"" + mailboxTextureGreen + "\"}]}}}");
-					} else if (is.getItemMeta().getLore().get(0).contains("Green")) {
-						giveMailbox(e.getPlayer(), "Blue");
-						//getServer().dispatchCommand(getServer().getConsoleSender(), "minecraft:give " + e.getPlayer().getName() + " minecraft:skull 1 3 {display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\"" + mailboxIdBlue + "\",Name:\"ha1fBit\",Properties:{textures:[{Value:\"" + mailboxTextureBlue + "\"}]}}}");
+						setMailboxColor(is, MailboxColor.GREEN);
+					} else { // Revert back to blue for green or unknown color
+						setMailboxColor(is, MailboxColor.BLUE);
 					}
 					e.getPlayer().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.textureChange", "You changed your mailbox's texture."));
 				} /* Stationery Stuff */ else if (is.getType() == Material.WRITTEN_BOOK && is.hasItemMeta() && is.getItemMeta().hasLore() && is.getItemMeta().hasDisplayName() && (is.getItemMeta().getDisplayName().contains("§rLetter") || is.getItemMeta().getDisplayName().contains("§rPackage"))) {
@@ -961,7 +985,7 @@ public class RealMail extends JavaPlugin {
 							mailboxesConfig.save(mailboxesFile);
 							e.setCancelled(true);
 							e.getBlock().setType(Material.AIR);
-							getServer().dispatchCommand(getServer().getConsoleSender(), "summon Item " + loc.getBlockX() + " " + loc.getBlockY() + " " + loc.getBlockZ() + " {Item:{id:minecraft:skull, Count:1, Damage: 3, tag:{display:{Name:\"§rMailbox\",Lore:[\"§r§7Blue\",\"§r§7Punch to change texture\"]},SkullOwner:{Id:\"" + mailboxIdBlue + "\",Name:\"ha1fBit\",Properties:{textures:[{Value:\"" + mailboxTextureBlue + "\"}]}}}}}");
+							e.getBlock().getWorld().dropItemNaturally(loc, getMailboxItem());
 						} catch (Exception ex) {
 							e.getPlayer().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.failedToRemoveMailbox", "Failed to remove mailbox."));
 							if (getConfig().getBoolean("verbose_errors", false)) {
