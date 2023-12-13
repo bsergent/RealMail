@@ -72,17 +72,8 @@ public class RealMail extends JavaPlugin {
 		getConfig().options().copyDefaults(true);
 		saveConfig();
 
-		// Define mailbox coupon
-		var mailboxCoupon = new ItemStack(Material.PAPER, 1);
-		mailboxCouponMeta = mailboxCoupon.getItemMeta();
-		mailboxCouponMeta.setDisplayName("§rMailbox Recipe");
-		mailboxCouponMeta.setLore(Arrays.asList(
-			"" + ChatColor.RESET + ChatColor.GRAY + "Right-click with this coupon",
-			"" + ChatColor.RESET + ChatColor.GRAY + "to get a mailbox"));
-		mailboxCoupon.setItemMeta(mailboxCouponMeta);
-
-		// Register mailbox coupon recipe
-		var mailboxRecipe = new ShapedRecipe(new NamespacedKey(this, "mailbox_coupon"), mailboxCoupon)
+		// Register mailbox recipe
+		var mailboxRecipe = new ShapedRecipe(new NamespacedKey(this, "mailbox_coupon"), getMailboxItem())
 			.shape("  w", "iii", "ici")
 			.setIngredient('w', new RecipeChoice.MaterialChoice( // Any wool color
 				Material.WHITE_WOOL, Material.GRAY_WOOL, Material.LIGHT_GRAY_WOOL, Material.BLACK_WOOL,
