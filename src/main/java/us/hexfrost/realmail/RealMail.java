@@ -67,13 +67,17 @@ public class RealMail extends JavaPlugin {
 	private final String mailboxTextureRed = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvNGZhODljZTg1OTMyYmVjMWExYzNmMzFjYjdjMDg1YTViZmIyYWM3ZTQwNDA5NDIwOGMzYWQxMjM4NzlkYTZkYSJ9fX0=";
 	private final String mailboxTextureGreen = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYzJiY2NiNTI0MDg4NWNhNjRlNDI0YTBjMTY4YTc4YzY3NmI4Yzg0N2QxODdmNmZiZjYwMjdhMWZlODZlZSJ9fX0=";
 
+	/* Recipes */
+	private ShapedRecipe mailboxRecipe;
+	private ShapelessRecipe stationeryRecipe;
+
 	@Override
 	public void onEnable() {
 		getConfig().options().copyDefaults(true);
 		saveConfig();
 
 		// Register mailbox recipe
-		var mailboxRecipe = new ShapedRecipe(new NamespacedKey(this, "mailbox_coupon"), getMailboxItem())
+		mailboxRecipe = new ShapedRecipe(new NamespacedKey(this, "mailbox_coupon"), getMailboxItem())
 			.shape("  w", "iii", "ici")
 			.setIngredient('w', new RecipeChoice.MaterialChoice( // Any wool color
 				Material.WHITE_WOOL, Material.GRAY_WOOL, Material.LIGHT_GRAY_WOOL, Material.BLACK_WOOL,
@@ -95,7 +99,7 @@ public class RealMail extends JavaPlugin {
 		stationery.setItemMeta(stationeryMeta);
 
 		// Register stationery recipe
-		var stationeryRecipe = new ShapelessRecipe(new NamespacedKey(this, "stationery"), stationery);
+		stationeryRecipe = new ShapelessRecipe(new NamespacedKey(this, "stationery"), stationery);
 		stationeryRecipe.addIngredient(Material.PAPER);
 		stationeryRecipe.addIngredient(Material.FEATHER);
 		this.getServer().addRecipe(stationeryRecipe);
@@ -166,6 +170,13 @@ public class RealMail extends JavaPlugin {
 		if (cmd.getName().equalsIgnoreCase("realmail")) { // TODO Separate commands into separate files and then register with Bukkit
 			//<editor-fold defaultstate="collapsed" desc="Intruction Commands">
 			if (args.length == 0 || (args.length < 2 && args[0].equals("1"))) { // Show crafting
+				// Discover crafting recipes
+				if (sender instanceof Player) {
+					((Player)sender).discoverRecipe(mailboxRecipe.getKey());
+					((Player)sender).discoverRecipe(stationeryRecipe.getKey());
+				}
+
+				// Show recipe in chat
 				sender.sendMessage(new String[]{
 					ChatColor.GOLD + "" + ChatColor.BOLD + "RealMail - Crafting Recipes",
 					ChatColor.GOLD + "Mailbox:",
