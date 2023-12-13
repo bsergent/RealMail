@@ -406,7 +406,7 @@ public class RealMail extends JavaPlugin {
 
 		// Set base64 texture data
 		var im = (SkullMeta)isMailbox.getItemMeta();
-		var profile = new GameProfile(UUID.randomUUID(), null);
+		var profile = new GameProfile(new UUID(0L, 0L), null);
 		profile.getProperties().put("textures", new Property("textures", base64));
 		try {
 			// Reflect into the SkullMeta and set its profile field to the newly created one
