@@ -149,7 +149,7 @@ public class RealMail extends JavaPlugin {
 		// Register events
 		getServer().getPluginManager().registerEvents(new MailListener(), this);
 		getServer().getPluginManager().registerEvents(new LoginListener(), this);
-		this.getCommand("realmail").setTabCompleter(new MailTabCompleter());
+		getCommand("realmail").setTabCompleter(new MailTabCompleter());
 
 		// Log that plugin has successfully initialized
 		getLogger().log(Level.INFO, "RealMail v{0} enabled.", getVersion());
@@ -589,10 +589,10 @@ public class RealMail extends JavaPlugin {
 		public void onUseItemEvent(org.bukkit.event.player.PlayerInteractEvent e) {
 			if (e.getItem() != null) {
 				ItemStack is = e.getItem();
-				ItemStack toBeRemoved = is.clone();
-				toBeRemoved.setAmount(1);
 				/* Exchange Coupon */
 				if (is.getType() == Material.PAPER && is.hasItemMeta() && is.getItemMeta().hasDisplayName() && is.getItemMeta().getDisplayName().contains("Mailbox Recipe")) {
+					ItemStack toBeRemoved = is.clone();
+					toBeRemoved.setAmount(1);
 					e.getPlayer().getInventory().removeItem(toBeRemoved);
 					giveMailbox(e.getPlayer());
 					e.getPlayer().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.exchangedRecipe", "You exchanged your recipe for a mailbox."));
@@ -607,24 +607,28 @@ public class RealMail extends JavaPlugin {
 						setMailboxColor(is, MailboxColor.BLUE);
 					}
 					e.getPlayer().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.textureChange", "You changed your mailbox's texture."));
-				} /* Stationery Stuff */ else if (is.getType() == Material.WRITTEN_BOOK && is.hasItemMeta() && is.getItemMeta().hasLore() && is.getItemMeta().hasDisplayName() && (is.getItemMeta().getDisplayName().contains("§rLetter") || is.getItemMeta().getDisplayName().contains("§rPackage"))) {
+				} /* Stationery Stuff */ else if (is.getType() == Material.WRITTEN_BOOK && is.hasItemMeta() && is.getItemMeta().hasLore() && is.getItemMeta().hasDisplayName() && (is.getItemMeta().getDisplayName().contains("Letter") || is.getItemMeta().getDisplayName().contains("Package"))) {
 					if (e.getClickedBlock() != null && e.getClickedBlock().getType().equals(Material.PLAYER_HEAD)) {
+						var locBlock = e.getClickedBlock().getLocation();
 
 						@SuppressWarnings("unchecked")
-						List<String> players = (List<String>)mailboxesConfig.getList("players", new LinkedList<>());
+						List<String> playerUUIDs = (List<String>)mailboxesConfig.getList("players", new LinkedList<>());
 
 						playersLoop:
-						for (String p : players) {
+						for (String uuid : playerUUIDs) {
 							@SuppressWarnings("unchecked")
-							List<Location> playersMailboxLocations = (List<Location>)mailboxesConfig.getList(OfflineHandler.getPublicUUID(UUID.fromString(p)) + ".mailboxes", new LinkedList<>());
+							List<Location> playersMailboxLocations = (List<Location>)mailboxesConfig.getList(OfflineHandler.getPublicUUID(UUID.fromString(uuid)) + ".mailboxes", new LinkedList<>());
 							for (Location loc : playersMailboxLocations) {
-								if (e.getClickedBlock().getLocation().equals(loc)) {
-									org.bukkit.inventory.meta.BookMeta newLetter = (org.bukkit.inventory.meta.BookMeta) is.getItemMeta();
+								if (locBlock.equals(loc)) {
+									BookMeta newLetter = (BookMeta) is.getItemMeta();
 									if (e.getPlayer().hasPermission("realmail.user.sendmail")) {
-										if (getConfig().getBoolean("universal_mailboxes", false) || (!getConfig().getBoolean("universal_mailboxes", false) && p.equals(e.getPlayer().getUniqueId() + "")) || e.getPlayer().hasPermission("realmail.admin.sendmailAnywhere")) {
+										if (getConfig().getBoolean("universal_mailboxes", false)
+												|| (!getConfig().getBoolean("universal_mailboxes", false) && uuid.equals(e.getPlayer().getUniqueId().toString()))
+												|| e.getPlayer().hasPermission("realmail.admin.sendmailAnywhere")) {
+											e.getPlayer().sendMessage("Sending written book as mail.");
 											ItemStack newLetterItem = new ItemStack(Material.WRITTEN_BOOK);
 											newLetterItem.setItemMeta(newLetter);
-											RealMail.this.sendMail(newLetterItem, e.getPlayer(), Bukkit.getOfflinePlayer(newLetter.getTitle()).getUniqueId(), true);
+											sendMail(newLetterItem, e.getPlayer(), Bukkit.getOfflinePlayer(newLetter.getTitle()).getUniqueId(), true);
 											e.setCancelled(true);
 										} else {
 											e.getPlayer().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.notYourMailbox", "That's not your mailbox. Use /mail to find out how to craft your own."));
