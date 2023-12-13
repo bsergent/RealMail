@@ -56,7 +56,7 @@ public class RealMail extends JavaPlugin {
 	private File packagesFile = null;
 	protected FileConfiguration languageConfig = null;
 	private File languageFile = null;
-	private ItemMeta mailboxCouponMeta = null;
+	private ItemMeta mailboxMeta = null;
 	private BookMeta stationeryMeta = null;
 	private String prefix = ChatColor.WHITE + "[" + ChatColor.GOLD + "Mail" + ChatColor.WHITE + "]";
 
@@ -77,7 +77,9 @@ public class RealMail extends JavaPlugin {
 		saveConfig();
 
 		// Register mailbox recipe
-		mailboxRecipe = new ShapedRecipe(new NamespacedKey(this, "mailbox_coupon"), getMailboxItem())
+		var mailbox = getMailboxItem();
+		mailboxMeta = mailbox.getItemMeta();
+		mailboxRecipe = new ShapedRecipe(new NamespacedKey(this, "mailbox_coupon"), mailbox)
 			.shape("  w", "iii", "ici")
 			.setIngredient('w', new RecipeChoice.MaterialChoice( // Any wool color
 				Material.WHITE_WOOL, Material.GRAY_WOOL, Material.LIGHT_GRAY_WOOL, Material.BLACK_WOOL,
@@ -1020,7 +1022,7 @@ public class RealMail extends JavaPlugin {
 						}
 					}
 				}
-			} else if (e.getRecipe().getResult().hasItemMeta() && e.getRecipe().getResult().getItemMeta().hasLore() && e.getRecipe().getResult().getItemMeta().getDisplayName().contains(mailboxCouponMeta.getDisplayName())) { // Mailbox
+			} else if (e.getRecipe().getResult().hasItemMeta() && e.getRecipe().getResult().getItemMeta().hasLore() && e.getRecipe().getResult().getItemMeta().getDisplayName().contains(mailboxMeta.getDisplayName())) { // Mailbox
 				if (!e.getWhoClicked().hasPermission("realmail.user.craft.mailbox")) {
 					e.getWhoClicked().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("noperm.craftMailbox", "You do not have permission to craft a mailbox."));
 					e.setResult(Event.Result.DENY);
