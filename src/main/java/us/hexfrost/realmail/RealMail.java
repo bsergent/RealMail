@@ -593,14 +593,8 @@ public class RealMail extends JavaPlugin {
 		public void onUseItemEvent(org.bukkit.event.player.PlayerInteractEvent e) {
 			if (e.getItem() != null) {
 				ItemStack is = e.getItem();
-				/* Exchange Coupon */
-				if (is.getType() == Material.PAPER && is.hasItemMeta() && is.getItemMeta().hasDisplayName() && is.getItemMeta().getDisplayName().contains("Mailbox Recipe")) {
-					ItemStack toBeRemoved = is.clone();
-					toBeRemoved.setAmount(1);
-					e.getPlayer().getInventory().removeItem(toBeRemoved);
-					giveMailbox(e.getPlayer());
-					e.getPlayer().sendMessage(prefix + ChatColor.WHITE + languageConfig.getString("mail.exchangedRecipe", "You exchanged your recipe for a mailbox."));
-				} /* Cycle texture */ else if (is.getType() == Material.PLAYER_HEAD && (e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK) && is.getItemMeta().hasLore() && is.getItemMeta().getLore().get(1).contains("Punch to change texture")) {
+				/* Cycle texture */
+				if (is.getType() == Material.PLAYER_HEAD && (e.getAction() == Action.LEFT_CLICK_AIR || e.getAction() == Action.LEFT_CLICK_BLOCK) && is.getItemMeta().hasLore() && is.getItemMeta().getLore().get(1).contains("Punch to change texture")) {
 					if (is.getItemMeta().getLore().get(0).contains("Blue")) {
 						setMailboxColor(is, MailboxColor.WHITE);
 					} else if (is.getItemMeta().getLore().get(0).contains("White")) {

@@ -23,7 +23,6 @@ mail:
   failedToSend: "Failed to send the letter."
   mailboxFull: "Recipient's mailbox was full. Please try again later."
   mailboxFullReceiver: "{0} tried to send you mail, but you mailbox was full. Consider emptying it out."
-  exchangedRecipe: "You exchanged your recipe for a mailbox."
   textureChange: "You changed your mailbox's texture."
   notYourMailbox: "That's not your mailbox. Use /mail to find out how to craft your own."
   packageInPackage: "You can't put packages inside of packages. You'll create package-ception."
