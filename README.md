@@ -31,3 +31,7 @@ Just drag the .jar into your server's plugins directory and restart the server. 
 
 ## Statistics
 Current usage statistics can be found on [mcstats.org](http://mcstats.org/plugin/RealMail).
+
+
+## Development
+RealMail is primarily developed on Windows using [Java 17.0.1](https://jdk.java.net/archive/) and [Maven 3.9.6](https://maven.apache.org/download.cgi).
